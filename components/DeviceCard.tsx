@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Device, AssetStatus } from '../types';
 
 interface DeviceCardProps {
@@ -10,6 +10,7 @@ interface DeviceCardProps {
 }
 
 const DeviceCard: React.FC<DeviceCardProps> = ({ device, onAction, onEdit, isAdmin }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
   const isAssigned = device.status === 'ASSIGNED';
   
   const getStatusStyles = (status: AssetStatus) => {
@@ -23,18 +24,21 @@ const DeviceCard: React.FC<DeviceCardProps> = ({ device, onAction, onEdit, isAdm
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 shadow-subtle overflow-hidden flex flex-col transition-all hover:shadow-md">
+    <div 
+      onClick={() => setIsExpanded(!isExpanded)}
+      className={`bg-white rounded-2xl border border-slate-100 shadow-subtle overflow-hidden flex flex-col transition-all cursor-pointer hover:shadow-md ${isExpanded ? 'ring-2 ring-primary/20 shadow-lg' : ''}`}
+    >
       <div className="p-4">
         <div className="flex justify-between items-start mb-3">
-          <div>
-            <h3 className="font-bold text-slate-800 text-base">{device.name}</h3>
+          <div className="flex-1 min-w-0 pr-2">
+            <h3 className="font-bold text-slate-800 text-base truncate">{device.name}</h3>
             <div className="flex items-center gap-2 mt-0.5">
               <p className="text-xs text-slate-400 font-medium">ID: {device.tagId}</p>
               <span className="w-1 h-1 bg-slate-200 rounded-full"></span>
               <p className="text-xs text-primary/70 font-bold uppercase tracking-tighter">{device.type}</p>
             </div>
           </div>
-          <span className={`text-[10px] px-2.5 py-1 rounded-full font-bold uppercase tracking-wider ${getStatusStyles(device.status)}`}>
+          <span className={`text-[10px] px-2.5 py-1 rounded-full font-bold uppercase tracking-wider flex-shrink-0 ${getStatusStyles(device.status)}`}>
             {device.status}
           </span>
         </div>
@@ -42,34 +46,79 @@ const DeviceCard: React.FC<DeviceCardProps> = ({ device, onAction, onEdit, isAdm
         {isAssigned && device.assignedTo && (
           <div className="mb-3 px-3 py-2 bg-red-50/50 rounded-xl border border-red-100 flex items-center gap-2">
             <span className="material-symbols-outlined text-[16px] text-red-500">person</span>
-            <span className="text-xs font-bold text-red-700 truncate">Assigned to: {device.assignedTo}</span>
+            <span className="text-xs font-bold text-red-700 truncate">Sử dụng: {device.assignedTo}</span>
           </div>
         )}
 
         <div className="space-y-3">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 flex-shrink-0">
-              <span className="material-symbols-outlined text-[18px]">location_on</span>
-            </div>
-            <div className="min-w-0">
-              <p className="text-[10px] uppercase tracking-tighter text-slate-400 font-bold">Location</p>
-              <p className="text-xs text-slate-700 font-medium truncate">{device.location}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 flex-shrink-0">
               <span className="material-symbols-outlined text-[18px]">settings_input_component</span>
             </div>
             <div className="min-w-0">
-              <p className="text-[10px] uppercase tracking-tighter text-slate-400 font-bold">Configuration</p>
-              <p className="text-xs text-slate-700 font-medium truncate">{device.configuration}</p>
+              <p className="text-[10px] uppercase tracking-tighter text-slate-400 font-bold">Cấu hình</p>
+              <p className="text-xs text-slate-700 font-medium truncate">{device.configuration || 'N/A'}</p>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 flex-shrink-0">
+              <span className="material-symbols-outlined text-[18px]">location_on</span>
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] uppercase tracking-tighter text-slate-400 font-bold">Vị trí</p>
+              <p className="text-xs text-slate-700 font-medium truncate">{device.location}</p>
             </div>
           </div>
         </div>
+
+        {/* Expanded Content */}
+        <div className={`mt-4 pt-4 border-t border-slate-50 space-y-3 overflow-hidden transition-all duration-300 ${isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0 pointer-events-none'}`}>
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 flex-shrink-0">
+              <span className="material-symbols-outlined text-[18px]">cable</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] uppercase tracking-tighter text-slate-400 font-bold">Phụ kiện</p>
+              <p className="text-xs text-slate-700 font-medium">{device.accessory || 'Không có'}</p>
+            </div>
+          </div>
+          
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 flex-shrink-0">
+              <span className="material-symbols-outlined text-[18px]">notes</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] uppercase tracking-tighter text-slate-400 font-bold">Ghi chú</p>
+              <p className="text-xs text-slate-700 font-medium italic">{device.note || 'Trống'}</p>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 flex-shrink-0">
+              <span className="material-symbols-outlined text-[18px]">update</span>
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] uppercase tracking-tighter text-slate-400 font-bold">Cập nhật lần cuối</p>
+              <p className="text-[10px] text-slate-500 font-medium">{device.lastUpdated}</p>
+            </div>
+          </div>
+        </div>
+
+        {!isExpanded && (
+           <div className="mt-2 text-center">
+              <span className="text-[10px] text-slate-300 font-bold uppercase tracking-widest flex items-center justify-center gap-1">
+                 Chi tiết <span className="material-symbols-outlined text-[12px]">expand_more</span>
+              </span>
+           </div>
+        )}
       </div>
       
       {isAdmin ? (
-        <div className="border-t border-slate-50 p-3 bg-slate-50/30 flex gap-2">
+        <div 
+          onClick={(e) => e.stopPropagation()}
+          className="border-t border-slate-50 p-3 bg-slate-50/30 flex gap-2"
+        >
           <button 
             onClick={() => onEdit(device)}
             className="flex-1 bg-white border border-slate-200 py-2 rounded-lg text-xs font-bold text-slate-600 flex items-center justify-center gap-1.5 active:bg-slate-100 transition-colors"
