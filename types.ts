@@ -9,6 +9,8 @@ export interface Device {
   type: string;
   location: string;
   configuration: string;
+  accessory?: string;
+  note?: string;
   status: AssetStatus;
   assignedTo?: string;
   lastUpdated: string;
