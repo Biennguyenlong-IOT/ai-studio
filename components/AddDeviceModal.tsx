@@ -1,14 +1,15 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Device } from '../types';
 
 interface AddDeviceModalProps {
+  existingTagIds: string[];
   onClose: () => void;
   onSubmit: (device: Omit<Device, 'id' | 'status' | 'lastUpdated'>) => void;
   isSaving?: boolean;
 }
 
-const AddDeviceModal: React.FC<AddDeviceModalProps> = ({ onClose, onSubmit, isSaving = false }) => {
+const AddDeviceModal: React.FC<AddDeviceModalProps> = ({ existingTagIds, onClose, onSubmit, isSaving = false }) => {
   const [formData, setFormData] = useState({
     tagId: '',
     name: '',
@@ -17,9 +18,24 @@ const AddDeviceModal: React.FC<AddDeviceModalProps> = ({ onClose, onSubmit, isSa
     location: '',
   });
 
+  const [error, setError] = useState<string | null>(null);
+
+  const isDuplicate = useMemo(() => {
+    if (!formData.tagId.trim()) return false;
+    return existingTagIds.some(id => id.toLowerCase() === formData.tagId.trim().toLowerCase());
+  }, [formData.tagId, existingTagIds]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+
     if (!formData.name || !formData.tagId || isSaving) return;
+
+    if (isDuplicate) {
+      setError("Mã tài sản này đã tồn tại trong hệ thống!");
+      return;
+    }
+
     onSubmit(formData);
   };
 
@@ -47,11 +63,16 @@ const AddDeviceModal: React.FC<AddDeviceModalProps> = ({ onClose, onSubmit, isSa
               <input 
                 required
                 disabled={isSaving}
-                className="w-full bg-slate-50 border-slate-100 rounded-xl text-sm text-slate-800 focus:ring-primary/20 focus:border-primary py-3 px-4 transition-all"
+                className={`w-full bg-slate-50 border rounded-xl text-sm text-slate-800 focus:ring-primary/20 focus:border-primary py-3 px-4 transition-all ${
+                  isDuplicate ? 'border-red-500 bg-red-50 focus:border-red-500' : 'border-slate-100'
+                }`}
                 placeholder="e.g. IT-2024-001"
                 type="text"
                 value={formData.tagId}
-                onChange={e => setFormData(prev => ({ ...prev, tagId: e.target.value }))}
+                onChange={e => {
+                  setFormData(prev => ({ ...prev, tagId: e.target.value }));
+                  setError(null);
+                }}
               />
             </div>
             <div>
@@ -67,6 +88,20 @@ const AddDeviceModal: React.FC<AddDeviceModalProps> = ({ onClose, onSubmit, isSa
               />
             </div>
           </div>
+
+          {isDuplicate && (
+            <div className="flex items-center gap-2 text-red-500 text-[11px] font-bold px-1 animate-pulse">
+              <span className="material-symbols-outlined text-sm">warning</span>
+              Mã tài sản đã tồn tại!
+            </div>
+          )}
+
+          {error && !isDuplicate && (
+             <div className="flex items-center gap-2 text-red-500 text-[11px] font-bold px-1">
+               <span className="material-symbols-outlined text-sm">error</span>
+               {error}
+             </div>
+          )}
 
           <div>
             <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5 ml-1">Device Type</label>
@@ -114,7 +149,13 @@ const AddDeviceModal: React.FC<AddDeviceModalProps> = ({ onClose, onSubmit, isSa
 
           <div className="flex gap-3 pt-4">
             <button type="button" onClick={onClose} className="flex-1 py-3.5 rounded-xl text-sm font-bold border border-slate-200 text-slate-600">Cancel</button>
-            <button type="submit" disabled={isSaving} className="flex-[2] py-3.5 rounded-xl text-sm font-bold bg-primary text-white flex items-center justify-center gap-2">
+            <button 
+              type="submit" 
+              disabled={isSaving || isDuplicate} 
+              className={`flex-[2] py-3.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all ${
+                isDuplicate ? 'bg-slate-300 cursor-not-allowed text-slate-500' : 'bg-primary text-white hover:scale-[1.02] active:scale-[0.98]'
+              }`}
+            >
               {isSaving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : 'Save Device'}
             </button>
           </div>
