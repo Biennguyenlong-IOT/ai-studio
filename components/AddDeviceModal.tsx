@@ -15,6 +15,8 @@ const AddDeviceModal: React.FC<AddDeviceModalProps> = ({ existingTagIds, onClose
     name: '',
     type: 'Laptop',
     configuration: '',
+    accessory: '',
+    note: '',
     location: '',
   });
 
@@ -41,7 +43,7 @@ const AddDeviceModal: React.FC<AddDeviceModalProps> = ({ existingTagIds, onClose
 
   return (
     <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/50 backdrop-blur-sm animate-fadeIn">
-      <div className="w-full max-w-lg bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl border border-slate-200 overflow-hidden transform transition-all animate-slideUp">
+      <div className="w-full max-w-lg bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl border border-slate-200 overflow-hidden transform transition-all animate-slideUp max-h-[90vh] flex flex-col">
         <div className="w-full flex justify-center pt-3 pb-1 sm:hidden">
           <div className="w-12 h-1.5 bg-slate-200 rounded-full"></div>
         </div>
@@ -56,7 +58,7 @@ const AddDeviceModal: React.FC<AddDeviceModalProps> = ({ existingTagIds, onClose
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="px-6 pb-10 sm:pb-8 space-y-4">
+        <form onSubmit={handleSubmit} className="px-6 pb-10 sm:pb-8 space-y-4 overflow-y-auto">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5 ml-1">Asset Tag ID</label>
@@ -122,7 +124,7 @@ const AddDeviceModal: React.FC<AddDeviceModalProps> = ({ existingTagIds, onClose
             </select>
           </div>
 
-          <div className="grid grid-cols-1 gap-4">
+          <div className="space-y-4">
             <div>
               <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5 ml-1">Configuration</label>
               <input 
@@ -134,15 +136,41 @@ const AddDeviceModal: React.FC<AddDeviceModalProps> = ({ existingTagIds, onClose
                 onChange={e => setFormData(prev => ({ ...prev, configuration: e.target.value }))}
               />
             </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+               <div>
+                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5 ml-1">Accessory</label>
+                <input 
+                  disabled={isSaving}
+                  className="w-full bg-slate-50 border-slate-100 rounded-xl text-sm text-slate-800 focus:ring-primary/20 focus:border-primary py-3 px-4"
+                  placeholder="Mouse, Keyboard, Case..."
+                  type="text"
+                  value={formData.accessory}
+                  onChange={e => setFormData(prev => ({ ...prev, accessory: e.target.value }))}
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5 ml-1">Location</label>
+                <input 
+                  disabled={isSaving}
+                  className="w-full bg-slate-50 border-slate-100 rounded-xl text-sm text-slate-800 focus:ring-primary/20 focus:border-primary py-3 px-4"
+                  placeholder="Storage / Floor"
+                  type="text"
+                  value={formData.location}
+                  onChange={e => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                />
+              </div>
+            </div>
+
             <div>
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5 ml-1">Location</label>
-              <input 
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5 ml-1">Note</label>
+              <textarea 
                 disabled={isSaving}
-                className="w-full bg-slate-50 border-slate-100 rounded-xl text-sm text-slate-800 focus:ring-primary/20 focus:border-primary py-3 px-4"
-                placeholder="Office Floor / Storage Area"
-                type="text"
-                value={formData.location}
-                onChange={e => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                rows={2}
+                className="w-full bg-slate-50 border-slate-100 rounded-xl text-sm text-slate-800 focus:ring-primary/20 focus:border-primary py-3 px-4 resize-none"
+                placeholder="Additional notes..."
+                value={formData.note}
+                onChange={e => setFormData(prev => ({ ...prev, note: e.target.value }))}
               />
             </div>
           </div>
