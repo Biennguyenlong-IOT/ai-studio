@@ -11,6 +11,85 @@ import AssignUserModal from './components/AssignUserModal';
 import EditDeviceModal from './components/EditDeviceModal';
 import IdentificationView from './components/IdentificationView';
 
+/* 
+  MÃ NGUỒN GOOGLE APPS SCRIPT CẬP NHẬT (Dán vào Apps Script của bạn):
+
+  function doPost(e) {
+    var data = JSON.parse(e.postData.contents);
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var devSheet = ss.getSheets()[0];
+    
+    if (data.action === 'ADD_DEVICE') {
+      // Thứ tự 11 cột: ID, TagID, Name, Type, Location, Configuration, Accessory, Note, Status, AssignedTo, LastUpdated
+      devSheet.appendRow([
+        "ID-" + Date.now(), 
+        data.tagId, 
+        data.name, 
+        data.type, 
+        data.location, 
+        data.configuration, 
+        data.accessory || "", 
+        data.note || "", 
+        "AVAILABLE", 
+        "", 
+        data.timestamp
+      ]);
+    } 
+    else if (data.action === 'ADD_USER') {
+      var sheet = ss.getSheetByName("Users") || ss.insertSheet("Users");
+      sheet.appendRow(["U-" + Date.now(), data.name, data.employeeId, data.role, data.timestamp]);
+    }
+    else if (data.action === 'EDIT_DEVICE') {
+      var devData = devSheet.getDataRange().getValues();
+      var tagIdToFind = data.tagId || data.tagid || data.mataisan;
+      
+      for (var i = 1; i < devData.length; i++) {
+        if (devData[i][1] == tagIdToFind) { 
+          devSheet.getRange(i + 1, 3).setValue(data.name);          // C: Tên
+          devSheet.getRange(i + 1, 4).setValue(data.type);          // D: Loại
+          devSheet.getRange(i + 1, 5).setValue(data.location);      // E: Vị trí
+          devSheet.getRange(i + 1, 6).setValue(data.configuration); // F: Cấu hình
+          devSheet.getRange(i + 1, 7).setValue(data.accessory || "");// G: Phụ kiện (MỚI)
+          devSheet.getRange(i + 1, 8).setValue(data.note || "");     // H: Ghi chú (MỚI)
+          devSheet.getRange(i + 1, 9).setValue(data.status);        // I: Trạng thái
+          devSheet.getRange(i + 1, 11).setValue(data.timestamp);    // K: Cập nhật cuối
+          break;
+        }
+      }
+    }
+    else if (data.action === 'ASSIGN_DEVICE' || data.action === 'RETURN_DEVICE') {
+      var devData = devSheet.getDataRange().getValues();
+      var tagIdToFind = data.tagId || data.tagid || data.mataisan;
+      
+      for (var i = 1; i < devData.length; i++) {
+        if (devData[i][1] == tagIdToFind) { 
+          var newStatus = (data.action === 'ASSIGN_DEVICE') ? 'ASSIGNED' : 'AVAILABLE';
+          var assignedTo = (data.action === 'ASSIGN_DEVICE') ? data.userName : "";
+          devSheet.getRange(i + 1, 9).setValue(newStatus);          // I: Trạng thái
+          devSheet.getRange(i + 1, 10).setValue(assignedTo);        // J: Người dùng
+          devSheet.getRange(i + 1, 11).setValue(data.timestamp);    // K: Cập nhật cuối
+          break;
+        }
+      }
+      
+      var histSheet = ss.getSheetByName("History") || ss.insertSheet("History");
+      if (histSheet.getLastRow() === 0) {
+        histSheet.appendRow(["Timestamp", "Tag ID", "Action", "Performed By", "Target User"]);
+      }
+      histSheet.appendRow([
+        data.timestamp, 
+        tagIdToFind, 
+        data.action, 
+        data.performedBy || "Admin", 
+        data.userName || "Kho/Storage"
+      ]);
+    }
+    
+    return ContentService.createTextOutput(JSON.stringify({ "result": "success" }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+*/
+
 const DEVICES_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSPQVVjmPXRJE3w0PhujorFo-Uj8mVwJ4Aa20i6LmsZpgmk-3pUsqajXf8Bhm68XXnROzierh4SITQ5/pub?gid=0&single=true&output=csv';
 const USERS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSPQVVjmPXRJE3w0PhujorFo-Uj8mVwJ4Aa20i6LmsZpgmk-3pUsqajXf8Bhm68XXnROzierh4SITQ5/pub?gid=1789914936&single=true&output=csv';
 const HISTORY_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSPQVVjmPXRJE3w0PhujorFo-Uj8mVwJ4Aa20i6LmsZpgmk-3pUsqajXf8Bhm68XXnROzierh4SITQ5/pub?gid=801829903&single=true&output=csv';
@@ -115,6 +194,8 @@ const App: React.FC = () => {
         type: d.type || d.loai || d['loại'] || 'Khác',
         location: d.location || d.vitri || d['vịtrí'] || 'Chưa rõ',
         configuration: d.configuration || d.cauhinh || d['cấuhình'] || '',
+        accessory: d.accessory || d.phukien || d['phụkiện'] || '',
+        note: d.note || d.ghichu || d['ghichú'] || '',
         status: (d.status?.toUpperCase() as AssetStatus) || 'AVAILABLE',
         assignedTo: d.assignedto || d.nguoisudung || d['ngườisửdụng'] || undefined,
         lastUpdated: d.lastupdated || new Date().toISOString()
