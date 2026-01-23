@@ -8,44 +8,57 @@ interface DevicesViewProps {
   onAction: (id: string, action: 'ASSIGN' | 'RETURN') => void;
   onEdit: (device: Device) => void;
   isAdmin: boolean;
+  searchTerm: string;
+  setSearchTerm: (val: string) => void;
 }
 
-const DevicesView: React.FC<DevicesViewProps> = ({ devices, onAction, onEdit, isAdmin }) => {
-  const [searchTerm, setSearchTerm] = useState('');
+const DevicesView: React.FC<DevicesViewProps> = ({ devices, onAction, onEdit, isAdmin, searchTerm, setSearchTerm }) => {
   const [filter, setFilter] = useState<string>('All');
 
   const filteredDevices = devices.filter(d => {
-    const matchesSearch = d.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          d.tagId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          (d.assignedTo && d.assignedTo.toLowerCase().includes(searchTerm.toLowerCase()));
+    const searchLower = searchTerm.toLowerCase();
+    const matchesSearch = 
+      d.name.toLowerCase().includes(searchLower) || 
+      d.tagId.toLowerCase().includes(searchLower) ||
+      (d.assignedTo && d.assignedTo.toLowerCase().includes(searchLower)) ||
+      d.location.toLowerCase().includes(searchLower);
+    
     const matchesFilter = filter === 'All' || d.type === filter;
     return matchesSearch && matchesFilter;
   });
 
-  const categories = ['All', 'Laptop', 'Mobile Phone', 'Tablet', 'Workstation', 'Peripheral'];
+  const categories = ['All', 'Laptop', 'Ideahub', 'Mini PC', 'Mobile Phone', 'Tablet', 'Workstation', 'Peripheral'];
 
   return (
     <div className="space-y-6 animate-fadeIn">
       <div>
         <h2 className="text-2xl font-bold text-slate-800 mb-1">
-          {isAdmin ? 'Device Inventory' : 'My Devices'}
+          {isAdmin ? 'Danh mục thiết bị' : 'Thiết bị của tôi'}
         </h2>
         <p className="text-sm text-slate-500">
-          {isAdmin ? 'Track and manage all hardware assets.' : 'Assets assigned to your profile.'}
+          {isAdmin ? 'Theo dõi và quản lý tất cả tài sản phần cứng.' : 'Các tài sản được cấp phát cho bạn.'}
         </p>
       </div>
 
       <div className="space-y-4">
         {/* Search Bar */}
-        <div className="relative">
-          <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">search</span>
+        <div className="relative group">
+          <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors">search</span>
           <input 
             type="text" 
-            placeholder={isAdmin ? "Search by name, ID or user..." : "Search your devices..."}
-            className="w-full bg-white border-slate-200 rounded-2xl py-3 pl-12 pr-4 text-sm focus:ring-primary/20 focus:border-primary transition-all"
+            placeholder={isAdmin ? "Tìm theo tên, ID, người dùng hoặc vị trí..." : "Tìm kiếm trong thiết bị của bạn..."}
+            className="w-full bg-white border-slate-200 rounded-2xl py-3.5 pl-12 pr-12 text-sm focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all shadow-sm font-medium"
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
           />
+          {searchTerm && (
+            <button 
+              onClick={() => setSearchTerm('')}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500"
+            >
+              <span className="material-symbols-outlined text-[20px]">cancel</span>
+            </button>
+          )}
         </div>
 
         {/* Filter Chips */}
@@ -70,8 +83,10 @@ const DevicesView: React.FC<DevicesViewProps> = ({ devices, onAction, onEdit, is
         ))}
         {filteredDevices.length === 0 && (
           <div className="col-span-full flex flex-col items-center justify-center py-12 text-slate-400">
-            <span className="material-symbols-outlined text-6xl mb-2">search_off</span>
-            <p>{isAdmin ? 'No devices found matching your search.' : 'You have no assets in this category.'}</p>
+            <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-3">
+              <span className="material-symbols-outlined text-4xl opacity-20">search_off</span>
+            </div>
+            <p className="font-medium">{isAdmin ? 'Không tìm thấy thiết bị phù hợp.' : 'Bạn không có tài sản nào trong mục này.'}</p>
           </div>
         )}
       </div>
