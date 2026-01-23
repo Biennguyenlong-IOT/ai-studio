@@ -28,7 +28,11 @@ const DeviceCard: React.FC<DeviceCardProps> = ({ device, onAction, onEdit, isAdm
         <div className="flex justify-between items-start mb-3">
           <div>
             <h3 className="font-bold text-slate-800 text-base">{device.name}</h3>
-            <p className="text-xs text-slate-400 font-medium">ID: {device.tagId}</p>
+            <div className="flex items-center gap-2 mt-0.5">
+              <p className="text-xs text-slate-400 font-medium">ID: {device.tagId}</p>
+              <span className="w-1 h-1 bg-slate-200 rounded-full"></span>
+              <p className="text-xs text-primary/70 font-bold uppercase tracking-tighter">{device.type}</p>
+            </div>
           </div>
           <span className={`text-[10px] px-2.5 py-1 rounded-full font-bold uppercase tracking-wider ${getStatusStyles(device.status)}`}>
             {device.status}
