@@ -65,6 +65,8 @@ const App: React.FC = () => {
 
   const isAdmin = currentUser?.role === 'ADMIN';
 
+  const existingTagIds = useMemo(() => devices.map(d => d.tagId), [devices]);
+
   const visibleDevices = useMemo(() => {
     if (!currentUser) return [];
     if (isAdmin) return devices;
@@ -454,7 +456,7 @@ const App: React.FC = () => {
 
       <Navigation activeTab={activeTab} setActiveTab={setActiveTab} />
 
-      {isAddDeviceOpen && <AddDeviceModal onClose={() => setIsAddDeviceOpen(false)} onSubmit={handleAddDevice} isSaving={isSaving} />}
+      {isAddDeviceOpen && <AddDeviceModal existingTagIds={existingTagIds} onClose={() => setIsAddDeviceOpen(false)} onSubmit={handleAddDevice} isSaving={isSaving} />}
       {isAddUserOpen && <AddUserModal onClose={() => setIsAddUserOpen(false)} onSubmit={handleAddUser} isSaving={isSaving} />}
       {assigningDevice && <AssignUserModal users={users} onClose={() => setAssigningDevice(null)} onSubmit={handleAssignUser} isSaving={isSaving} />}
       {editingDevice && <EditDeviceModal device={editingDevice} onClose={() => setEditingDevice(null)} onSubmit={handleEditDevice} isSaving={isSaving} />}
