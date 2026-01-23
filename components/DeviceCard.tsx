@@ -24,20 +24,23 @@ const DeviceCard: React.FC<DeviceCardProps> = ({ device, onAction, onEdit, isAdm
   };
 
   const formatDate = (dateStr: string) => {
-    if (!dateStr) return 'N/A';
+    if (!dateStr || dateStr === 'N/A' || dateStr.trim() === '') return 'Chưa có thông tin';
+    
     try {
-      const date = new Date(dateStr);
+      const date = new Date(dateStr.trim());
       // Kiểm tra nếu date không hợp lệ
       if (isNaN(date.getTime())) return dateStr;
       
-      return date.toLocaleString('vi-VN', {
-        hour: '2-digit',
-        minute: '2-digit',
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-      });
+      const pad = (n: number) => n.toString().padStart(2, '0');
+      const hours = pad(date.getHours());
+      const minutes = pad(date.getMinutes());
+      const day = pad(date.getDate());
+      const month = pad(date.getMonth() + 1);
+      const year = date.getFullYear();
+      
+      return `${hours}:${minutes} ${day}/${month}/${year}`;
     } catch (e) {
+      console.error("Lỗi định dạng ngày:", e);
       return dateStr;
     }
   };
@@ -115,11 +118,11 @@ const DeviceCard: React.FC<DeviceCardProps> = ({ device, onAction, onEdit, isAdm
           
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 flex-shrink-0">
-              <span className="material-symbols-outlined text-[18px]">update</span>
+              <span className="material-symbols-outlined text-[18px]">history</span>
             </div>
             <div className="min-w-0">
               <p className="text-[10px] uppercase tracking-tighter text-slate-400 font-bold">Cập nhật lần cuối</p>
-              <p className="text-[10px] text-slate-500 font-medium">{formatDate(device.lastUpdated)}</p>
+              <p className="text-[11px] text-slate-600 font-bold">{formatDate(device.lastUpdated)}</p>
             </div>
           </div>
         </div>
