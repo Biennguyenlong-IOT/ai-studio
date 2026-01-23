@@ -23,6 +23,25 @@ const DeviceCard: React.FC<DeviceCardProps> = ({ device, onAction, onEdit, isAdm
     }
   };
 
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return 'N/A';
+    try {
+      const date = new Date(dateStr);
+      // Kiểm tra nếu date không hợp lệ
+      if (isNaN(date.getTime())) return dateStr;
+      
+      return date.toLocaleString('vi-VN', {
+        hour: '2-digit',
+        minute: '2-digit',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+    } catch (e) {
+      return dateStr;
+    }
+  };
+
   return (
     <div 
       onClick={() => setIsExpanded(!isExpanded)}
@@ -100,7 +119,7 @@ const DeviceCard: React.FC<DeviceCardProps> = ({ device, onAction, onEdit, isAdm
             </div>
             <div className="min-w-0">
               <p className="text-[10px] uppercase tracking-tighter text-slate-400 font-bold">Cập nhật lần cuối</p>
-              <p className="text-[10px] text-slate-500 font-medium">{device.lastUpdated}</p>
+              <p className="text-[10px] text-slate-500 font-medium">{formatDate(device.lastUpdated)}</p>
             </div>
           </div>
         </div>
