@@ -1,0 +1,103 @@
+
+import React from 'react';
+import { Device, AssetStatus } from '../types';
+
+interface DeviceCardProps {
+  device: Device;
+  onAction: (id: string, action: 'ASSIGN' | 'RETURN') => void;
+  onEdit: (device: Device) => void;
+  isAdmin: boolean;
+}
+
+const DeviceCard: React.FC<DeviceCardProps> = ({ device, onAction, onEdit, isAdmin }) => {
+  const isAssigned = device.status === 'ASSIGNED';
+  
+  const getStatusStyles = (status: AssetStatus) => {
+    switch (status) {
+      case 'AVAILABLE': return 'bg-green-50 text-status-available';
+      case 'ASSIGNED': return 'bg-red-50 text-status-assigned';
+      case 'PENDING': return 'bg-orange-50 text-status-pending';
+      case 'REPAIR': return 'bg-amber-50 text-amber-600';
+      default: return 'bg-slate-50 text-slate-500';
+    }
+  };
+
+  return (
+    <div className="bg-white rounded-2xl border border-slate-100 shadow-subtle overflow-hidden flex flex-col transition-all hover:shadow-md">
+      <div className="p-4">
+        <div className="flex justify-between items-start mb-3">
+          <div>
+            <h3 className="font-bold text-slate-800 text-base">{device.name}</h3>
+            <p className="text-xs text-slate-400 font-medium">ID: {device.tagId}</p>
+          </div>
+          <span className={`text-[10px] px-2.5 py-1 rounded-full font-bold uppercase tracking-wider ${getStatusStyles(device.status)}`}>
+            {device.status}
+          </span>
+        </div>
+        
+        {isAssigned && device.assignedTo && (
+          <div className="mb-3 px-3 py-2 bg-red-50/50 rounded-xl border border-red-100 flex items-center gap-2">
+            <span className="material-symbols-outlined text-[16px] text-red-500">person</span>
+            <span className="text-xs font-bold text-red-700 truncate">Assigned to: {device.assignedTo}</span>
+          </div>
+        )}
+
+        <div className="space-y-3">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 flex-shrink-0">
+              <span className="material-symbols-outlined text-[18px]">location_on</span>
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] uppercase tracking-tighter text-slate-400 font-bold">Location</p>
+              <p className="text-xs text-slate-700 font-medium truncate">{device.location}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 flex-shrink-0">
+              <span className="material-symbols-outlined text-[18px]">settings_input_component</span>
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] uppercase tracking-tighter text-slate-400 font-bold">Configuration</p>
+              <p className="text-xs text-slate-700 font-medium truncate">{device.configuration}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {isAdmin ? (
+        <div className="border-t border-slate-50 p-3 bg-slate-50/30 flex gap-2">
+          <button 
+            onClick={() => onEdit(device)}
+            className="flex-1 bg-white border border-slate-200 py-2 rounded-lg text-xs font-bold text-slate-600 flex items-center justify-center gap-1.5 active:bg-slate-100 transition-colors"
+          >
+            <span className="material-symbols-outlined text-[16px]">edit</span> Edit
+          </button>
+          
+          {isAssigned ? (
+            <button 
+              onClick={() => onAction(device.id, 'RETURN')}
+              className="flex-1 bg-white border border-slate-200 py-2 rounded-lg text-xs font-bold text-slate-600 flex items-center justify-center gap-1.5 active:bg-slate-100 transition-colors"
+            >
+              <span className="material-symbols-outlined text-[16px]">keyboard_return</span> Return
+            </button>
+          ) : (
+            <button 
+              onClick={() => onAction(device.id, 'ASSIGN')}
+              className="flex-1 bg-primary text-white py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all"
+            >
+              <span className="material-symbols-outlined text-[16px]">person_add</span> Assign
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="border-t border-slate-50 p-2.5 bg-slate-50/10 flex justify-center italic">
+          <span className="text-[10px] text-slate-400 font-medium flex items-center gap-1">
+            <span className="material-symbols-outlined text-[12px]">visibility</span> View Only
+          </span>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default DeviceCard;
