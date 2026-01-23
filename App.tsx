@@ -53,6 +53,7 @@ const App: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
   
   const [isAddDeviceOpen, setIsAddDeviceOpen] = useState(false);
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
@@ -64,11 +65,9 @@ const App: React.FC = () => {
 
   const isAdmin = currentUser?.role === 'ADMIN';
 
-  // Derived state: Filter devices and history for Staff
   const visibleDevices = useMemo(() => {
     if (!currentUser) return [];
     if (isAdmin) return devices;
-    // Filter by name or employeeId to be robust
     return devices.filter(d => 
       d.assignedTo === currentUser.name || 
       d.assignedTo === currentUser.employeeId
@@ -78,8 +77,6 @@ const App: React.FC = () => {
   const visibleHistory = useMemo(() => {
     if (!currentUser) return [];
     if (isAdmin) return history;
-    
-    // For Staff, show history related to THEIR visible devices
     const deviceIds = new Set(visibleDevices.map(d => d.tagId));
     return history.filter(h => 
       deviceIds.has(h.deviceId) || 
@@ -177,6 +174,11 @@ const App: React.FC = () => {
 
   const handleLogout = () => {
     setCurrentUser(null);
+  };
+
+  const handleDashboardSearch = (val: string) => {
+    setSearchTerm(val);
+    setActiveTab('devices');
   };
 
   const handleAddDevice = async (newDevice: Omit<Device, 'id' | 'status' | 'lastUpdated'>) => {
@@ -341,7 +343,6 @@ const App: React.FC = () => {
     else setIsAddDeviceOpen(true);
   };
 
-  // If not logged in, show Identification View
   if (!currentUser) {
     return <IdentificationView users={users} onSelect={handleIdentify} isLoading={isLoading} />;
   }
@@ -390,6 +391,7 @@ const App: React.FC = () => {
                 onAction={handleAction} 
                 onEdit={setEditingDevice} 
                 isAdmin={isAdmin}
+                onSearch={handleDashboardSearch}
               />
             )}
             {activeTab === 'devices' && (
@@ -398,6 +400,8 @@ const App: React.FC = () => {
                 onAction={handleAction} 
                 onEdit={setEditingDevice} 
                 isAdmin={isAdmin}
+                searchTerm={searchTerm}
+                setSearchTerm={setSearchTerm}
               />
             )}
             {activeTab === 'users' && <UsersView users={users} />}
