@@ -141,15 +141,16 @@ const App: React.FC = () => {
       const formattedHistory: HistoryEntry[] = rawHistory.map((h, index) => {
         const device = formattedDevices.find(d => d.tagId === h.tagid);
         let normalizedAction: HistoryEntry['action'] = 'UPDATE';
-        const rawAction = h.action?.toUpperCase() || '';
+        const rawAction = (h.action || '').toUpperCase();
         if (rawAction.includes('ASSIGN')) normalizedAction = 'ASSIGN';
         else if (rawAction.includes('RETURN')) normalizedAction = 'RETURN';
         else if (rawAction.includes('REPAIR')) normalizedAction = 'REPAIR';
+        else if (rawAction.includes('ADD')) normalizedAction = 'UPDATE';
 
         return {
           id: h.id || `hist-${index}`,
           deviceId: h.tagid || 'N/A',
-          deviceName: device ? device.name : (h.devicename || h.name || 'Device #' + (h.tagid || index)),
+          deviceName: h.devicename || (device ? device.name : 'N/A'),
           action: normalizedAction,
           timestamp: h.timestamp ? new Date(h.timestamp).toLocaleString('vi-VN', {
             hour: '2-digit',
@@ -158,8 +159,8 @@ const App: React.FC = () => {
             month: '2-digit',
             year: 'numeric'
           }) : 'Unknown Time',
-          performer: h.performedby || h.performer || 'Hệ thống',
-          target: h.targetuser || h.target || (normalizedAction === 'RETURN' ? 'Kho' : '')
+          performer: h.performer || h.performedby || 'Hệ thống',
+          target: h.target || h.doituong || (normalizedAction === 'RETURN' ? 'Kho' : '')
         };
       });
       
@@ -195,7 +196,12 @@ const App: React.FC = () => {
     if (!isAdmin) return;
     setIsSaving(true);
     try {
-      const payload = { ...newDevice, action: 'ADD_DEVICE', timestamp: new Date().toISOString(), performedBy: currentUser?.name };
+      const payload = { 
+        ...newDevice, 
+        action: 'ADD_DEVICE', 
+        timestamp: new Date().toISOString(), 
+        performedBy: currentUser?.name 
+      };
       await fetch(GOOGLE_SCRIPT_APP_URL, {
         method: 'POST',
         mode: 'no-cors',
@@ -220,7 +226,7 @@ const App: React.FC = () => {
       const payload = { 
         ...updatedDevice, 
         action: 'EDIT_DEVICE', 
-        tagid: updatedDevice.tagId,
+        tagId: updatedDevice.tagId,
         timestamp: new Date().toISOString(),
         performedBy: currentUser?.name
       };
@@ -282,7 +288,13 @@ const App: React.FC = () => {
     if (!isAdmin) return;
     setIsSaving(true);
     try {
-      const payload = { ...newUser, action: 'ADD_USER', timestamp: new Date().toISOString(), performedBy: currentUser?.name };
+      const payload = { 
+        ...newUser, 
+        action: 'ADD_USER', 
+        timestamp: new Date().toISOString(), 
+        performedBy: currentUser?.name
+      };
+      
       await fetch(GOOGLE_SCRIPT_APP_URL, {
         method: 'POST',
         mode: 'no-cors',
@@ -506,7 +518,7 @@ const App: React.FC = () => {
                    </div>
                 </div>
                 
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">AssetFlow v2.5.0</p>
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">AssetFlow v2.7.0</p>
               </div>
             )}
           </>
