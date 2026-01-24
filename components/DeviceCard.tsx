@@ -163,13 +163,16 @@ const DeviceCard: React.FC<DeviceCardProps> = ({ device, onAction, onEdit, onDel
             </button>
           )}
 
-          <button 
-            onClick={() => onDelete(device.id)}
-            className="w-10 h-10 bg-white border border-red-100 py-2 rounded-lg text-red-500 flex items-center justify-center active:bg-red-50 transition-colors shadow-sm"
-            title="Xóa thiết bị"
-          >
-            <span className="material-symbols-outlined text-[20px]">delete</span>
-          </button>
+          {/* CHỈ HIỆN NÚT XOÁ KHI TRẠNG THÁI LÀ PENDING */}
+          {device.status === 'PENDING' && (
+            <button 
+              onClick={() => onDelete(device.id)}
+              className="w-10 h-10 bg-white border border-red-100 py-2 rounded-lg text-red-500 flex items-center justify-center active:bg-red-50 transition-colors shadow-sm hover:border-red-500 hover:bg-red-500 hover:text-white"
+              title="Xóa thiết bị (Chỉ khả dụng cho trạng thái PENDING)"
+            >
+              <span className="material-symbols-outlined text-[20px]">delete</span>
+            </button>
+          )}
         </div>
       ) : (
         <div className="border-t border-slate-50 p-2.5 bg-slate-50/10 flex justify-center italic">
