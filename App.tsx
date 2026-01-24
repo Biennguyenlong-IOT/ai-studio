@@ -11,41 +11,11 @@ import AssignUserModal from './components/AssignUserModal';
 import EditDeviceModal from './components/EditDeviceModal';
 import IdentificationView from './components/IdentificationView';
 
-const DEVICES_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSPQVVjmPXRJE3w0PhujorFo-Uj8mVwJ4Aa20i6LmsZpgmk-3pUsqajXf8Bhm68XXnROzierh4SITQ5/pub?gid=0&single=true&output=csv';
-const USERS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSPQVVjmPXRJE3w0PhujorFo-Uj8mVwJ4Aa20i6LmsZpgmk-3pUsqajXf8Bhm68XXnROzierh4SITQ5/pub?gid=1789914936&single=true&output=csv';
-const HISTORY_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSPQVVjmPXRJE3w0PhujorFo-Uj8mVwJ4Aa20i6LmsZpgmk-3pUsqajXf8Bhm68XXnROzierh4SITQ5/pub?gid=801829903&single=true&output=csv';
-const GOOGLE_SCRIPT_APP_URL = 'https://script.google.com/macros/s/AKfycbywRpgG-YElFth55EkcjLYQgH4bepTf_yMYsVI9X2ktgf9hABt6sxxa-D7Tj2ySf7Q1/exec';
-
-const parseCSV = (csvText: string): any[] => {
-  const lines = csvText.split(/\r?\n/);
-  if (lines.length < 2) return [];
-  const headers = lines[0].split(',').map(h => 
-    h.replace(/"/g, '').trim().toLowerCase().replace(/\s+/g, '')
-  );
-  
-  return lines.slice(1).filter(line => line.trim() !== '').map(line => {
-    const values: string[] = [];
-    let current = '';
-    let inQuotes = false;
-    for (let i = 0; i < line.length; i++) {
-      let char = line[i];
-      if (char === '"') {
-        if (inQuotes && line[i + 1] === '"') { current += '"'; i++; }
-        else { inQuotes = !inQuotes; }
-      } else if (char === ',' && !inQuotes) {
-        values.push(current.trim());
-        current = '';
-      } else { current += char; }
-    }
-    values.push(current.trim());
-    return headers.reduce((obj: any, header, i) => {
-      let val = values[i] || '';
-      val = val.replace(/^"|"$/g, '');
-      obj[header] = val;
-      return obj;
-    }, {});
-  });
-};
+// URL Google Apps Script Web App
+// IMPORTANT: You must Deploy this script with:
+// 1. Execute as: Me
+// 2. Who has access: Anyone
+const GOOGLE_SCRIPT_APP_URL = 'https://script.google.com/macros/s/AKfycbywRpgG-YElFth55EkcjLYQgH4bepTf_yMYsVI9X2ktgf9hABt6sxxa-D7Tj2ySf7Q1/exec'.trim();
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
@@ -61,7 +31,7 @@ const App: React.FC = () => {
   const [editingDevice, setEditingDevice] = useState<Device | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<{ message: string; details?: string; isNetworkError?: boolean } | null>(null);
 
   const isAdmin = currentUser?.role === 'ADMIN';
 
@@ -91,84 +61,85 @@ const App: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const cb = `cb=${Date.now()}`;
-      const [devicesRes, usersRes, historyRes] = await Promise.all([
-        fetch(`${DEVICES_CSV_URL}&${cb}`),
-        fetch(`${USERS_CSV_URL}&${cb}`),
-        fetch(`${HISTORY_CSV_URL}&${cb}`)
-      ]);
-
-      if (!devicesRes.ok || !usersRes.ok) throw new Error("Không thể tải dữ liệu.");
-
-      const devicesCsv = await devicesRes.text();
-      const usersCsv = await usersRes.text();
-      const historyCsv = await (historyRes.ok ? historyRes.text() : Promise.resolve(''));
-
-      const rawDevices = parseCSV(devicesCsv);
-      const rawUsers = parseCSV(usersCsv);
-      const rawHistory = parseCSV(historyCsv);
+      const url = `${GOOGLE_SCRIPT_APP_URL}?action=GET_DATA&cb=${Date.now()}`;
       
-      const formattedDevices: Device[] = rawDevices.map((d, index) => {
-        const tagId = d.tagid || d.tag_id || d.mataisan || d['mãtài sản'] || 'N/A';
-        return {
-          id: d.id || tagId || `dev-${index}`,
-          tagId: tagId,
-          name: d.name || d.ten || d['tên'] || 'Không tên',
-          type: d.type || d.loai || d['loại'] || 'Khác',
-          location: d.location || d.vitri || d['vịtrí'] || 'Chưa rõ',
-          configuration: d.configuration || d.cauhinh || d['cấuhình'] || '',
-          accessory: d.accessory || d.phukien || d['phụkiện'] || '',
-          note: d.note || d.ghichu || d['ghichú'] || '',
-          status: (d.status?.toUpperCase() as AssetStatus) || 'AVAILABLE',
-          assignedTo: d.assignedto || d.nguoisudung || d['ngườisửdụng'] || undefined,
-          lastUpdated: d.lastupdated || d.timestamp || d.capnhatcuoi || d['cậpnhậtcuối'] || d['cậpnhậtlầncuối'] || new Date().toISOString()
-        };
+      console.log("Attempting fetch from:", url);
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        // Removed explicit mode: 'cors' to allow default redirect handling
+        headers: {
+          'Accept': 'application/json',
+        },
+        redirect: 'follow',
       });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      
+      if (!data || typeof data !== 'object') {
+        throw new Error("Invalid response format from server.");
+      }
+
+      // Format Devices
+      const formattedDevices: Device[] = (data.devices || []).map((d: any, index: number) => ({
+        id: d.id || d.tagid || `dev-${index}`,
+        tagId: d.tagid || 'N/A',
+        name: d.name || 'Không tên',
+        type: d.type || 'Khác',
+        location: d.location || 'Chưa rõ',
+        configuration: d.configuration || '',
+        accessory: d.accessory || '',
+        note: d.note || '',
+        status: (d.status?.toString().toUpperCase() as AssetStatus) || 'AVAILABLE',
+        assignedTo: d.assignedto || undefined,
+        lastUpdated: d.lastupdated || new Date().toISOString()
+      }));
       setDevices(formattedDevices);
 
-      const formattedUsers: User[] = rawUsers.map((u, index) => {
-        const empId = u.employeeid || u.manhanvien || u['mãnhânviên'] || 'N/A';
-        return {
-          id: u.id || empId || `user-${index}`,
-          name: u.name || u.ten || u['tên'] || 'Unknown User',
-          employeeId: empId,
-          role: (u.role?.toUpperCase() === 'ADMIN' ? 'ADMIN' : 'STAFF') as any,
-          avatarUrl: u.avatarurl || undefined
-        };
-      });
+      // Format Users
+      const formattedUsers: User[] = (data.users || []).map((u: any, index: number) => ({
+        id: u.id || u.employeeid || `user-${index}`,
+        name: u.name || 'Unknown User',
+        employeeId: u.employeeid || 'N/A',
+        role: (u.role?.toString().toUpperCase() === 'ADMIN' ? 'ADMIN' : 'STAFF') as any,
+        avatarUrl: u.avatarurl || undefined
+      }));
       setUsers(formattedUsers);
 
-      const formattedHistory: HistoryEntry[] = rawHistory.map((h, index) => {
-        const device = formattedDevices.find(d => d.tagId === h.tagid);
+      // Format History
+      const formattedHistory: HistoryEntry[] = (data.history || []).map((h: any, index: number) => {
         let normalizedAction: HistoryEntry['action'] = 'UPDATE';
-        const rawAction = (h.action || '').toUpperCase();
+        const rawAction = (h.action || '').toString().toUpperCase();
         if (rawAction.includes('ASSIGN')) normalizedAction = 'ASSIGN';
         else if (rawAction.includes('RETURN')) normalizedAction = 'RETURN';
         else if (rawAction.includes('REPAIR')) normalizedAction = 'REPAIR';
-        else if (rawAction.includes('ADD')) normalizedAction = 'UPDATE';
 
         return {
           id: h.id || `hist-${index}`,
           deviceId: h.tagid || 'N/A',
-          deviceName: h.devicename || (device ? device.name : 'N/A'),
+          deviceName: h.devicename || 'N/A',
           action: normalizedAction,
-          timestamp: h.timestamp ? new Date(h.timestamp).toLocaleString('vi-VN', {
-            hour: '2-digit',
-            minute: '2-digit',
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
-          }) : 'Unknown Time',
-          performer: h.performer || h.performedby || 'Hệ thống',
-          target: h.target || h.doituong || (normalizedAction === 'RETURN' ? 'Kho' : '')
+          timestamp: h.timestamp ? new Date(h.timestamp).toLocaleString('vi-VN') : 'Không rõ',
+          performer: h.performer || 'Hệ thống',
+          target: h.target || (normalizedAction === 'RETURN' ? 'Kho' : '')
         };
       });
-      
       setHistory(formattedHistory.reverse());
 
     } catch (err: any) {
-      console.error("Fetch Error:", err);
-      setError("Lỗi kết nối dữ liệu. Vui lòng kiểm tra quyền truy cập Sheet.");
+      console.error("Fetch Execution Error:", err);
+      
+      const isNetworkError = err.name === 'TypeError' || err.message.includes('Failed to fetch');
+      
+      setError({ 
+        message: isNetworkError ? "Lỗi kết nối API (CORS/Network)" : "Lỗi phản hồi máy chủ",
+        details: err.message,
+        isNetworkError
+      });
     } finally {
       setIsLoading(false);
     }
@@ -192,224 +163,81 @@ const App: React.FC = () => {
     setActiveTab('devices');
   };
 
-  const handleAddDevice = async (newDevice: Omit<Device, 'id' | 'status' | 'lastUpdated'>) => {
-    if (!isAdmin) return;
+  const sendPostRequest = async (payload: any) => {
     setIsSaving(true);
     try {
-      const payload = { 
-        ...newDevice, 
-        action: 'ADD_DEVICE', 
-        timestamp: new Date().toISOString(), 
-        performedBy: currentUser?.name 
-      };
-      await fetch(GOOGLE_SCRIPT_APP_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify(payload)
+      await fetch(GOOGLE_SCRIPT_APP_URL, { 
+        method: 'POST', 
+        mode: 'no-cors', 
+        headers: { 'Content-Type': 'text/plain' }, 
+        body: JSON.stringify(payload) 
       });
+      
       setTimeout(() => {
+        fetchData();
         setIsSaving(false);
         setIsAddDeviceOpen(false);
-        fetchData();
-      }, 2000);
-    } catch (err) {
-      console.error(err);
-      setIsSaving(false);
-    }
-  };
-
-  const handleEditDevice = async (updatedDevice: Device) => {
-    if (!isAdmin) return;
-    setIsSaving(true);
-    try {
-      const payload = { 
-        ...updatedDevice, 
-        action: 'EDIT_DEVICE', 
-        tagId: updatedDevice.tagId,
-        timestamp: new Date().toISOString(),
-        performedBy: currentUser?.name
-      };
-
-      await fetch(GOOGLE_SCRIPT_APP_URL, {
-        method: 'POST',
-        mode: 'no-cors', 
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify(payload)
-      });
-
-      setTimeout(() => {
-        setIsSaving(false);
+        setIsAddUserOpen(false);
         setEditingDevice(null);
-        fetchData();
+        setAssigningDevice(null);
       }, 2000);
-    } catch (err) {
-      console.error("Lỗi cập nhật:", err);
+    } catch (err: any) {
+      console.error("POST Execution Error:", err);
+      setError({ message: "Không thể cập nhật dữ liệu.", details: err.message });
       setIsSaving(false);
     }
   };
 
-  const handleDeleteDevice = async (id: string) => {
+  const handleAddDevice = (newDevice: Omit<Device, 'id' | 'status' | 'lastUpdated'>) => {
+    if (!isAdmin) return;
+    const payload = { ...newDevice, action: 'ADD_DEVICE', timestamp: new Date().toISOString(), performedBy: currentUser?.name };
+    sendPostRequest(payload);
+  };
+
+  const handleEditDevice = (updatedDevice: Device) => {
+    if (!isAdmin) return;
+    const payload = { ...updatedDevice, action: 'EDIT_DEVICE', tagId: updatedDevice.tagId, timestamp: new Date().toISOString(), performedBy: currentUser?.name };
+    sendPostRequest(payload);
+  };
+
+  const handleDeleteDevice = (id: string) => {
     if (!isAdmin) return;
     const device = devices.find(d => d.id === id);
-    if (!device) return;
-
-    if (!window.confirm(`Bạn có chắc chắn muốn xóa thiết bị "${device.name}" không?`)) return;
-
-    setIsSaving(true);
-    try {
-      const payload = {
-        action: 'DELETE_DEVICE',
-        tagId: device.tagId,
-        deviceName: device.name,
-        timestamp: new Date().toISOString(),
-        performedBy: currentUser?.name
-      };
-
-      await fetch(GOOGLE_SCRIPT_APP_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify(payload)
-      });
-
-      setTimeout(() => {
-        setIsSaving(false);
-        fetchData();
-      }, 2000);
-    } catch (err) {
-      console.error(err);
-      setIsSaving(false);
-      fetchData();
-    }
+    if (!device || !window.confirm(`Xóa thiết bị "${device.name}"?`)) return;
+    const payload = { action: 'DELETE_DEVICE', tagId: device.tagId, deviceName: device.name, timestamp: new Date().toISOString(), performedBy: currentUser?.name };
+    sendPostRequest(payload);
   };
 
-  const handleAddUser = async (newUser: Omit<User, 'id' | 'avatarUrl'>) => {
+  const handleAddUser = (newUser: Omit<User, 'id' | 'avatarUrl'>) => {
     if (!isAdmin) return;
-    setIsSaving(true);
-    try {
-      const payload = { 
-        ...newUser, 
-        action: 'ADD_USER', 
-        timestamp: new Date().toISOString(), 
-        performedBy: currentUser?.name
-      };
-      
-      await fetch(GOOGLE_SCRIPT_APP_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify(payload)
-      });
-      
-      setTimeout(() => {
-        setIsSaving(false);
-        setIsAddUserOpen(false);
-        fetchData();
-      }, 2000);
-    } catch (err) {
-      console.error(err);
-      setIsSaving(false);
-    }
+    const payload = { ...newUser, action: 'ADD_USER', timestamp: new Date().toISOString(), performedBy: currentUser?.name };
+    sendPostRequest(payload);
   };
 
-  const handleDeleteUser = async (id: string) => {
+  const handleDeleteUser = (id: string) => {
     if (!isAdmin) return;
     const user = users.find(u => u.id === id);
-    if (!user) return;
-
-    if (!window.confirm(`Bạn có chắc chắn muốn xóa người dùng "${user.name}" không?`)) return;
-
-    setIsSaving(true);
-    try {
-      const payload = {
-        action: 'DELETE_USER',
-        employeeId: user.employeeId,
-        name: user.name,
-        timestamp: new Date().toISOString(),
-        performedBy: currentUser?.name
-      };
-
-      await fetch(GOOGLE_SCRIPT_APP_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify(payload)
-      });
-
-      setTimeout(() => {
-        setIsSaving(false);
-        fetchData();
-      }, 2000);
-    } catch (err) {
-      console.error(err);
-      setIsSaving(false);
-      fetchData();
-    }
+    if (!user || !window.confirm(`Xóa nhân sự "${user.name}"?`)) return;
+    const payload = { action: 'DELETE_USER', employeeId: user.employeeId, name: user.name, timestamp: new Date().toISOString(), performedBy: currentUser?.name };
+    sendPostRequest(payload);
   };
 
-  const handleAssignUser = async (user: User) => {
+  const handleAssignUser = (user: User) => {
     if (!assigningDevice || !isAdmin || !currentUser) return;
-    setIsSaving(true);
-    try {
-      const payload = {
-        action: 'ASSIGN_DEVICE',
-        tagId: assigningDevice.tagId,
-        userName: user.name,
-        deviceName: assigningDevice.name,
-        timestamp: new Date().toISOString(),
-        performedBy: currentUser.name
-      };
-      await fetch(GOOGLE_SCRIPT_APP_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify(payload)
-      });
-      
-      setTimeout(() => {
-        setIsSaving(false);
-        setAssigningDevice(null);
-        fetchData();
-      }, 2000);
-    } catch (err) {
-      console.error(err);
-      setIsSaving(false);
-    }
+    const payload = { action: 'ASSIGN_DEVICE', tagId: assigningDevice.tagId, userName: user.name, deviceName: assigningDevice.name, timestamp: new Date().toISOString(), performedBy: currentUser.name };
+    sendPostRequest(payload);
   };
 
-  const handleAction = async (deviceId: string, action: 'ASSIGN' | 'RETURN') => {
+  const handleAction = (deviceId: string, action: 'ASSIGN' | 'RETURN') => {
     if (!isAdmin || !currentUser) return;
     const device = devices.find(d => d.id === deviceId);
     if (!device) return;
-
-    if (action === 'ASSIGN') {
-      setAssigningDevice(device);
+    if (action === 'ASSIGN') { 
+      setAssigningDevice(device); 
     } else {
-      setIsSaving(true);
-      try {
-        const payload = {
-          action: 'RETURN_DEVICE',
-          tagId: device.tagId,
-          deviceName: device.name,
-          timestamp: new Date().toISOString(),
-          performedBy: currentUser.name
-        };
-        await fetch(GOOGLE_SCRIPT_APP_URL, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'text/plain' },
-          body: JSON.stringify(payload)
-        });
-
-        setTimeout(() => {
-          setIsSaving(false);
-          fetchData();
-        }, 2000);
-      } catch (err) {
-        console.error(err);
-        setIsSaving(false);
-      }
+      if (!window.confirm(`Thu hồi thiết bị "${device.name}" về kho?`)) return;
+      const payload = { action: 'RETURN_DEVICE', tagId: device.tagId, deviceName: device.name, timestamp: new Date().toISOString(), performedBy: currentUser.name };
+      sendPostRequest(payload);
     }
   };
 
@@ -438,7 +266,7 @@ const App: React.FC = () => {
           </div>
         </div>
         <div className="flex items-center gap-1">
-          <button onClick={fetchData} className="text-slate-500 p-2 rounded-full hover:bg-slate-100">
+          <button onClick={fetchData} className="text-slate-500 p-2 rounded-full hover:bg-slate-100" disabled={isLoading || isSaving}>
             <span className={`material-symbols-outlined ${isLoading || isSaving ? 'animate-spin' : ''}`}>sync</span>
           </button>
         </div>
@@ -446,48 +274,72 @@ const App: React.FC = () => {
 
       <main className="flex-1 overflow-y-auto px-4 pt-6 pb-12">
         {error && (
-          <div className="bg-red-50 border border-red-100 text-red-600 p-4 rounded-2xl mb-6 text-sm flex items-center gap-3">
-            <span className="material-symbols-outlined">error</span>
-            {error}
+          <div className="bg-white border-2 border-red-100 p-6 rounded-[32px] mb-8 shadow-xl shadow-red-50 animate-fadeIn">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center">
+                 <span className="material-symbols-outlined text-red-500 text-3xl">cloud_off</span>
+              </div>
+              <div>
+                 <h4 className="text-base font-black text-slate-800 uppercase tracking-tight">{error.message}</h4>
+                 <p className="text-xs text-red-500 font-bold italic">{error.details}</p>
+              </div>
+            </div>
+            
+            {error.isNetworkError && (
+               <div className="bg-slate-50 rounded-2xl p-4 mb-6 space-y-3">
+                  <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-200 pb-2">Hướng dẫn khắc phục nhanh:</p>
+                  <ul className="space-y-2">
+                     <li className="flex gap-2 text-xs font-medium text-slate-600">
+                        <span className="text-primary font-black">1.</span>
+                        <span>Mở Google Apps Script, nhấn <b>Deploy > New Deployment</b></span>
+                     </li>
+                     <li className="flex gap-2 text-xs font-medium text-slate-600">
+                        <span className="text-primary font-black">2.</span>
+                        <span><b>Execute as:</b> Chọn <b>Me</b> (Tài khoản của bạn)</span>
+                     </li>
+                     <li className="flex gap-2 text-xs font-medium text-slate-600">
+                        <span className="text-primary font-black">3.</span>
+                        <span><b>Who has access:</b> Chọn <b>Anyone</b> (Bắt buộc)</span>
+                     </li>
+                  </ul>
+               </div>
+            )}
+
+            <div className="flex gap-3">
+              <button 
+                onClick={fetchData} 
+                className="flex-1 bg-primary text-white py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-blue-700 active:scale-95 transition-all shadow-lg shadow-blue-200"
+              >
+                Thử lại kết nối
+              </button>
+              <button 
+                onClick={() => window.open('https://script.google.com/', '_blank')}
+                className="px-6 py-3 rounded-2xl border-2 border-slate-100 text-slate-400 hover:bg-slate-50 transition-all"
+              >
+                <span className="material-symbols-outlined text-[20px]">open_in_new</span>
+              </button>
+            </div>
           </div>
         )}
         
-        {isLoading ? (
+        {isLoading && !error ? (
           <div className="flex flex-col items-center justify-center h-64 space-y-4">
-            <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
-            <p className="text-sm text-slate-400 font-medium">Đang tải dữ liệu...</p>
+            <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+            <div className="text-center">
+              <p className="text-sm text-slate-400 font-bold uppercase tracking-widest animate-pulse">Đang đồng bộ JSON API...</p>
+              <p className="text-[10px] text-slate-300 mt-1 font-medium italic">Vui lòng kiểm tra tab Apps Script nếu chờ lâu</p>
+            </div>
           </div>
         ) : (
           <>
             {activeTab === 'dashboard' && (
-              <DashboardView 
-                devices={visibleDevices} 
-                history={visibleHistory} 
-                onViewAll={() => setActiveTab('devices')} 
-                onAction={handleAction} 
-                onEdit={setEditingDevice} 
-                onDelete={handleDeleteDevice}
-                isAdmin={isAdmin}
-                onSearch={handleDashboardSearch}
-              />
+              <DashboardView devices={visibleDevices} history={visibleHistory} onViewAll={() => setActiveTab('devices')} onAction={handleAction} onEdit={setEditingDevice} onDelete={handleDeleteDevice} isAdmin={isAdmin} onSearch={handleDashboardSearch} />
             )}
             {activeTab === 'devices' && (
-              <DevicesView 
-                devices={visibleDevices} 
-                onAction={handleAction} 
-                onEdit={setEditingDevice} 
-                onDelete={handleDeleteDevice}
-                isAdmin={isAdmin}
-                searchTerm={searchTerm}
-                setSearchTerm={setSearchTerm}
-              />
+              <DevicesView devices={visibleDevices} onAction={handleAction} onEdit={setEditingDevice} onDelete={handleDeleteDevice} isAdmin={isAdmin} searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
             )}
             {activeTab === 'users' && (
-              <UsersView 
-                users={users} 
-                isAdmin={isAdmin} 
-                onDelete={handleDeleteUser} 
-              />
+              <UsersView users={users} isAdmin={isAdmin} onDelete={handleDeleteUser} />
             )}
             {activeTab === 'settings' && (
               <div className="flex flex-col items-center justify-center h-full pt-10 space-y-6">
@@ -502,23 +354,17 @@ const App: React.FC = () => {
                    </div>
                    <h3 className="text-xl font-bold text-slate-800 mb-1">{currentUser.name}</h3>
                    <p className="text-sm text-slate-400 font-medium mb-6">Mã nhân viên: {currentUser.employeeId}</p>
-                   
                    <div className="flex flex-col gap-3">
                       <div className={`px-4 py-2 text-white text-[11px] font-bold rounded-2xl uppercase tracking-[0.2em] shadow-lg ${isAdmin ? 'bg-primary shadow-primary/20' : 'bg-slate-400'}`}>
                          {currentUser.role} MODE
                       </div>
-                      
-                      <button 
-                         onClick={handleLogout}
-                         className="mt-6 flex items-center justify-center gap-2 w-full py-4 rounded-2xl border-2 border-slate-100 text-slate-500 font-bold text-sm hover:bg-red-50 hover:text-red-500 hover:border-red-100 transition-all active:scale-95"
-                      >
+                      <button onClick={handleLogout} className="mt-6 flex items-center justify-center gap-2 w-full py-4 rounded-2xl border-2 border-slate-100 text-slate-500 font-bold text-sm hover:bg-red-50 hover:text-red-500 hover:border-red-100 transition-all active:scale-95">
                          <span className="material-symbols-outlined text-[20px]">logout</span>
                          Đăng xuất tài khoản
                       </button>
                    </div>
                 </div>
-                
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">AssetFlow v2.7.0</p>
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">AssetFlow v3.3 (CORS Optimized)</p>
               </div>
             )}
           </>
@@ -527,22 +373,17 @@ const App: React.FC = () => {
 
       {isAdmin && activeTab !== 'settings' && activeTab !== 'dashboard' && (
         <div className="fixed bottom-24 right-6 z-40">
-          <button 
-            onClick={handleFabClick} 
-            className="w-14 h-14 rounded-full shadow-fab bg-primary text-white flex items-center justify-center hover:scale-110 active:scale-95 transition-all"
-          >
+          <button onClick={handleFabClick} className="w-14 h-14 rounded-full shadow-fab bg-primary text-white flex items-center justify-center hover:scale-110 active:scale-95 transition-all">
             <span className="material-symbols-outlined text-[32px]">add</span>
           </button>
         </div>
       )}
 
       <Navigation activeTab={activeTab} setActiveTab={setActiveTab} />
-
       {isAddDeviceOpen && <AddDeviceModal existingTagIds={existingTagIds} onClose={() => setIsAddDeviceOpen(false)} onSubmit={handleAddDevice} isSaving={isSaving} />}
       {isAddUserOpen && <AddUserModal onClose={() => setIsAddUserOpen(false)} onSubmit={handleAddUser} isSaving={isSaving} />}
       {assigningDevice && <AssignUserModal users={users} onClose={() => setAssigningDevice(null)} onSubmit={handleAssignUser} isSaving={isSaving} />}
       {editingDevice && <EditDeviceModal device={editingDevice} onClose={() => setEditingDevice(null)} onSubmit={handleEditDevice} isSaving={isSaving} />}
-      
       {isSaving && (
         <div className="fixed top-20 right-4 z-50 animate-slideIn">
            <div className="bg-white border border-primary/20 shadow-xl rounded-2xl px-4 py-3 flex items-center gap-3">
