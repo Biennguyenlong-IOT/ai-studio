@@ -7,12 +7,13 @@ interface DevicesViewProps {
   devices: Device[];
   onAction: (id: string, action: 'ASSIGN' | 'RETURN') => void;
   onEdit: (device: Device) => void;
+  onDelete: (id: string) => void;
   isAdmin: boolean;
   searchTerm: string;
   setSearchTerm: (val: string) => void;
 }
 
-const DevicesView: React.FC<DevicesViewProps> = ({ devices, onAction, onEdit, isAdmin, searchTerm, setSearchTerm }) => {
+const DevicesView: React.FC<DevicesViewProps> = ({ devices, onAction, onEdit, onDelete, isAdmin, searchTerm, setSearchTerm }) => {
   const [filter, setFilter] = useState<string>('All');
 
   const filteredDevices = devices.filter(d => {
@@ -41,7 +42,6 @@ const DevicesView: React.FC<DevicesViewProps> = ({ devices, onAction, onEdit, is
       </div>
 
       <div className="space-y-4">
-        {/* Search Bar */}
         <div className="relative group">
           <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors">search</span>
           <input 
@@ -61,7 +61,6 @@ const DevicesView: React.FC<DevicesViewProps> = ({ devices, onAction, onEdit, is
           )}
         </div>
 
-        {/* Filter Chips */}
         <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 no-scrollbar">
           {categories.map(cat => (
             <button
@@ -79,7 +78,7 @@ const DevicesView: React.FC<DevicesViewProps> = ({ devices, onAction, onEdit, is
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredDevices.map(device => (
-          <DeviceCard key={device.id} device={device} onAction={onAction} onEdit={onEdit} isAdmin={isAdmin} />
+          <DeviceCard key={device.id} device={device} onAction={onAction} onEdit={onEdit} onDelete={onDelete} isAdmin={isAdmin} />
         ))}
         {filteredDevices.length === 0 && (
           <div className="col-span-full flex flex-col items-center justify-center py-12 text-slate-400">
