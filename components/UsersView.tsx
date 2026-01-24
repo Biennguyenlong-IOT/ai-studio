@@ -4,9 +4,11 @@ import { User } from '../types';
 
 interface UsersViewProps {
   users: User[];
+  isAdmin: boolean;
+  onDelete: (id: string) => void;
 }
 
-const UsersView: React.FC<UsersViewProps> = ({ users }) => {
+const UsersView: React.FC<UsersViewProps> = ({ users, isAdmin, onDelete }) => {
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredUsers = users.filter(u => 
@@ -26,7 +28,7 @@ const UsersView: React.FC<UsersViewProps> = ({ users }) => {
         <input 
           type="text" 
           placeholder="Search by name or employee ID..."
-          className="w-full bg-white border-slate-200 rounded-2xl py-3 pl-12 pr-4 text-sm focus:ring-primary/20 focus:border-primary transition-all"
+          className="w-full bg-white border-slate-200 rounded-2xl py-3 pl-12 pr-4 text-sm focus:ring-primary/20 focus:border-primary transition-all shadow-sm"
           value={searchTerm}
           onChange={e => setSearchTerm(e.target.value)}
         />
@@ -53,15 +55,28 @@ const UsersView: React.FC<UsersViewProps> = ({ users }) => {
               </div>
               <p className="text-xs text-slate-500 font-medium tracking-tight">ID: {user.employeeId}</p>
             </div>
-            <button className="text-slate-400 hover:text-primary p-2 transition-colors">
-              <span className="material-symbols-outlined">more_vert</span>
-            </button>
+            
+            {isAdmin && (
+              <button 
+                onClick={() => onDelete(user.id)}
+                className="text-slate-300 hover:text-red-500 p-2 transition-colors rounded-lg hover:bg-red-50"
+                title="Xóa người dùng"
+              >
+                <span className="material-symbols-outlined">delete</span>
+              </button>
+            )}
+            
+            {!isAdmin && (
+               <button className="text-slate-200 p-2 cursor-default">
+                 <span className="material-symbols-outlined">more_vert</span>
+               </button>
+            )}
           </div>
         ))}
         {filteredUsers.length === 0 && (
           <div className="col-span-full py-12 text-center text-slate-400">
-            <span className="material-symbols-outlined text-5xl mb-2">person_off</span>
-            <p className="text-sm font-medium">No users found.</p>
+            <span className="material-symbols-outlined text-5xl mb-2 opacity-20">person_off</span>
+            <p className="text-sm font-medium italic">Không tìm thấy người dùng phù hợp.</p>
           </div>
         )}
       </div>
