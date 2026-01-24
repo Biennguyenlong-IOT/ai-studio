@@ -10,6 +10,7 @@ interface DashboardViewProps {
   onViewAll: () => void;
   onAction: (id: string, action: 'ASSIGN' | 'RETURN') => void;
   onEdit: (device: Device) => void;
+  onDelete: (id: string) => void;
   isAdmin: boolean;
   onSearch: (val: string) => void;
 }
@@ -26,14 +27,12 @@ const AnalogClock: React.FC = () => {
   const minutes = time.getMinutes();
   const hours = time.getHours();
 
-  // Tính toán góc quay chính xác
   const sDegree = (seconds / 60) * 360;
   const mDegree = (minutes / 60) * 360 + (seconds / 60) * 6;
   const hDegree = (hours / 12) * 360 + (minutes / 60) * 30;
 
   return (
     <div className="relative w-24 h-24 rounded-full border-[3px] border-white shadow-inner flex items-center justify-center bg-white/20 backdrop-blur-sm">
-      {/* Vạch giờ (Dots) */}
       {[...Array(12)].map((_, i) => (
         <div 
           key={i} 
@@ -42,9 +41,7 @@ const AnalogClock: React.FC = () => {
         />
       ))}
       
-      {/* Container kim đồng hồ */}
       <div className="absolute inset-0 pointer-events-none">
-        {/* Kim Giờ - Màu xanh lá */}
         <div 
           className="absolute inset-0 flex justify-center items-start" 
           style={{ transform: `rotate(${hDegree}deg)` }}
@@ -52,7 +49,6 @@ const AnalogClock: React.FC = () => {
           <div className="w-1.5 h-7 bg-green-500 rounded-full mt-5 shadow-sm" />
         </div>
 
-        {/* Kim Phút - Màu xanh lá */}
         <div 
           className="absolute inset-0 flex justify-center items-start" 
           style={{ transform: `rotate(${mDegree}deg)` }}
@@ -60,7 +56,6 @@ const AnalogClock: React.FC = () => {
           <div className="w-1 h-9 bg-green-400 rounded-full mt-3 shadow-sm" />
         </div>
 
-        {/* Kim Giây - Màu trắng */}
         <div 
           className="absolute inset-0 flex justify-center items-start" 
           style={{ transform: `rotate(${sDegree}deg)` }}
@@ -69,7 +64,6 @@ const AnalogClock: React.FC = () => {
         </div>
       </div>
       
-      {/* Tâm đồng hồ (Center Point) */}
       <div className="absolute w-2.5 h-2.5 bg-white rounded-full border-2 border-green-500 shadow-sm z-10" />
     </div>
   );
@@ -89,7 +83,7 @@ const MiniCalendar: React.FC = () => {
   );
 };
 
-const DashboardView: React.FC<DashboardViewProps> = ({ devices, history, onViewAll, onAction, onEdit, isAdmin, onSearch }) => {
+const DashboardView: React.FC<DashboardViewProps> = ({ devices, history, onViewAll, onAction, onEdit, onDelete, isAdmin, onSearch }) => {
   const [localSearch, setLocalSearch] = useState('');
   const [greeting, setGreeting] = useState('');
 
@@ -116,7 +110,6 @@ const DashboardView: React.FC<DashboardViewProps> = ({ devices, history, onViewA
 
   return (
     <div className="space-y-8 animate-fadeIn">
-      {/* Command Center Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-br from-primary to-blue-700 rounded-[40px] p-6 text-white shadow-2xl shadow-primary/20">
         <div className="absolute -top-24 -right-24 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
         <div className="absolute -bottom-12 -left-12 w-48 h-48 bg-blue-400/20 rounded-full blur-2xl"></div>
@@ -150,7 +143,6 @@ const DashboardView: React.FC<DashboardViewProps> = ({ devices, history, onViewA
         </form>
       </section>
 
-      {/* Stats Section with improved design */}
       <section>
         <h2 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-4 px-1 flex items-center gap-2">
           <span className="w-1.5 h-1.5 rounded-full bg-primary"></span>
@@ -165,7 +157,6 @@ const DashboardView: React.FC<DashboardViewProps> = ({ devices, history, onViewA
       </section>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Featured Inventory */}
         <section>
           <div className="flex items-center justify-between mb-4 px-1">
             <h2 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
@@ -177,7 +168,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ devices, history, onViewA
           <div className="space-y-4">
             {devices.length > 0 ? (
               devices.slice(0, 3).map(device => (
-                <DeviceCard key={device.id} device={device} onAction={onAction} onEdit={onEdit} isAdmin={isAdmin} />
+                <DeviceCard key={device.id} device={device} onAction={onAction} onEdit={onEdit} onDelete={onDelete} isAdmin={isAdmin} />
               ))
             ) : (
               <div className="bg-white p-12 rounded-[32px] border border-dashed border-slate-200 text-center">
@@ -188,7 +179,6 @@ const DashboardView: React.FC<DashboardViewProps> = ({ devices, history, onViewA
           </div>
         </section>
 
-        {/* Timeline Section */}
         <section>
           <div className="flex items-center justify-between mb-4 px-1">
             <h2 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
