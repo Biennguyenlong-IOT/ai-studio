@@ -291,7 +291,7 @@ const App: React.FC = () => {
                   <ul className="space-y-2">
                      <li className="flex gap-2 text-xs font-medium text-slate-600">
                         <span className="text-primary font-black">1.</span>
-                        <span>Mở Google Apps Script, nhấn <b>Deploy &gt; New Deployment</b></span>
+                        <span>Mở Google Apps Script, nhấn <b>Deploy > New Deployment</b></span>
                      </li>
                      <li className="flex gap-2 text-xs font-medium text-slate-600">
                         <span className="text-primary font-black">2.</span>
