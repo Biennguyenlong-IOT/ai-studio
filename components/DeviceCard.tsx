@@ -6,10 +6,11 @@ interface DeviceCardProps {
   device: Device;
   onAction: (id: string, action: 'ASSIGN' | 'RETURN') => void;
   onEdit: (device: Device) => void;
+  onDelete: (id: string) => void;
   isAdmin: boolean;
 }
 
-const DeviceCard: React.FC<DeviceCardProps> = ({ device, onAction, onEdit, isAdmin }) => {
+const DeviceCard: React.FC<DeviceCardProps> = ({ device, onAction, onEdit, onDelete, isAdmin }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const isAssigned = device.status === 'ASSIGNED';
   
@@ -28,7 +29,6 @@ const DeviceCard: React.FC<DeviceCardProps> = ({ device, onAction, onEdit, isAdm
     
     try {
       const date = new Date(dateStr.trim());
-      // Kiểm tra nếu date không hợp lệ
       if (isNaN(date.getTime())) return dateStr;
       
       const pad = (n: number) => n.toString().padStart(2, '0');
@@ -94,7 +94,6 @@ const DeviceCard: React.FC<DeviceCardProps> = ({ device, onAction, onEdit, isAdm
           </div>
         </div>
 
-        {/* Expanded Content */}
         <div className={`mt-4 pt-4 border-t border-slate-50 space-y-3 overflow-hidden transition-all duration-300 ${isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0 pointer-events-none'}`}>
           <div className="flex items-start gap-3">
             <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 flex-shrink-0">
@@ -163,6 +162,14 @@ const DeviceCard: React.FC<DeviceCardProps> = ({ device, onAction, onEdit, isAdm
               <span className="material-symbols-outlined text-[16px]">person_add</span> Assign
             </button>
           )}
+
+          <button 
+            onClick={() => onDelete(device.id)}
+            className="w-10 h-10 bg-white border border-red-100 py-2 rounded-lg text-red-500 flex items-center justify-center active:bg-red-50 transition-colors shadow-sm"
+            title="Xóa thiết bị"
+          >
+            <span className="material-symbols-outlined text-[20px]">delete</span>
+          </button>
         </div>
       ) : (
         <div className="border-t border-slate-50 p-2.5 bg-slate-50/10 flex justify-center italic">
