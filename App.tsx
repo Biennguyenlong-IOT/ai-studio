@@ -108,28 +108,34 @@ const App: React.FC = () => {
       const rawUsers = parseCSV(usersCsv);
       const rawHistory = parseCSV(historyCsv);
       
-      const formattedDevices: Device[] = rawDevices.map((d, index) => ({
-        id: d.id || `dev-${index}`,
-        tagId: d.tagid || d.tag_id || d.mataisan || d['mãtài sản'] || 'N/A',
-        name: d.name || d.ten || d['tên'] || 'Không tên',
-        type: d.type || d.loai || d['loại'] || 'Khác',
-        location: d.location || d.vitri || d['vịtrí'] || 'Chưa rõ',
-        configuration: d.configuration || d.cauhinh || d['cấuhình'] || '',
-        accessory: d.accessory || d.phukien || d['phụkiện'] || '',
-        note: d.note || d.ghichu || d['ghichú'] || '',
-        status: (d.status?.toUpperCase() as AssetStatus) || 'AVAILABLE',
-        assignedTo: d.assignedto || d.nguoisudung || d['ngườisửdụng'] || undefined,
-        lastUpdated: d.lastupdated || d.timestamp || d.capnhatcuoi || d['cậpnhậtcuối'] || d['cậpnhậtlầncuối'] || new Date().toISOString()
-      }));
+      const formattedDevices: Device[] = rawDevices.map((d, index) => {
+        const tagId = d.tagid || d.tag_id || d.mataisan || d['mãtài sản'] || 'N/A';
+        return {
+          id: d.id || tagId || `dev-${index}`,
+          tagId: tagId,
+          name: d.name || d.ten || d['tên'] || 'Không tên',
+          type: d.type || d.loai || d['loại'] || 'Khác',
+          location: d.location || d.vitri || d['vịtrí'] || 'Chưa rõ',
+          configuration: d.configuration || d.cauhinh || d['cấuhình'] || '',
+          accessory: d.accessory || d.phukien || d['phụkiện'] || '',
+          note: d.note || d.ghichu || d['ghichú'] || '',
+          status: (d.status?.toUpperCase() as AssetStatus) || 'AVAILABLE',
+          assignedTo: d.assignedto || d.nguoisudung || d['ngườisửdụng'] || undefined,
+          lastUpdated: d.lastupdated || d.timestamp || d.capnhatcuoi || d['cậpnhậtcuối'] || d['cậpnhậtlầncuối'] || new Date().toISOString()
+        };
+      });
       setDevices(formattedDevices);
 
-      const formattedUsers: User[] = rawUsers.map((u, index) => ({
-        id: u.id || `user-${index}`,
-        name: u.name || u.ten || u['tên'] || 'Unknown User',
-        employeeId: u.employeeid || u.manhanvien || u['mãnhânviên'] || 'N/A',
-        role: (u.role?.toUpperCase() === 'ADMIN' ? 'ADMIN' : 'STAFF') as any,
-        avatarUrl: u.avatarurl || undefined
-      }));
+      const formattedUsers: User[] = rawUsers.map((u, index) => {
+        const empId = u.employeeid || u.manhanvien || u['mãnhânviên'] || 'N/A';
+        return {
+          id: u.id || empId || `user-${index}`,
+          name: u.name || u.ten || u['tên'] || 'Unknown User',
+          employeeId: empId,
+          role: (u.role?.toUpperCase() === 'ADMIN' ? 'ADMIN' : 'STAFF') as any,
+          avatarUrl: u.avatarurl || undefined
+        };
+      });
       setUsers(formattedUsers);
 
       const formattedHistory: HistoryEntry[] = rawHistory.map((h, index) => {
@@ -189,7 +195,7 @@ const App: React.FC = () => {
     if (!isAdmin) return;
     setIsSaving(true);
     try {
-      const payload = { ...newDevice, action: 'ADD_DEVICE', timestamp: new Date().toISOString() };
+      const payload = { ...newDevice, action: 'ADD_DEVICE', timestamp: new Date().toISOString(), performedBy: currentUser?.name };
       await fetch(GOOGLE_SCRIPT_APP_URL, {
         method: 'POST',
         mode: 'no-cors',
@@ -200,7 +206,6 @@ const App: React.FC = () => {
         setIsSaving(false);
         setIsAddDeviceOpen(false);
         fetchData();
-        alert("Thiết bị mới đã được lưu!");
       }, 2000);
     } catch (err) {
       console.error(err);
@@ -211,15 +216,11 @@ const App: React.FC = () => {
   const handleEditDevice = async (updatedDevice: Device) => {
     if (!isAdmin) return;
     setIsSaving(true);
-    const previousDevices = [...devices];
-    setDevices(prev => prev.map(d => d.id === updatedDevice.id ? updatedDevice : d));
-    
     try {
       const payload = { 
         ...updatedDevice, 
         action: 'EDIT_DEVICE', 
         tagid: updatedDevice.tagId,
-        mataisan: updatedDevice.tagId,
         timestamp: new Date().toISOString(),
         performedBy: currentUser?.name
       };
@@ -235,12 +236,10 @@ const App: React.FC = () => {
         setIsSaving(false);
         setEditingDevice(null);
         fetchData();
-      }, 2500);
-
+      }, 2000);
     } catch (err) {
       console.error("Lỗi cập nhật:", err);
       setIsSaving(false);
-      setDevices(previousDevices);
     }
   };
 
@@ -249,7 +248,7 @@ const App: React.FC = () => {
     const device = devices.find(d => d.id === id);
     if (!device) return;
 
-    if (!window.confirm(`Bạn có chắc chắn muốn xóa thiết bị "${device.name}" (ID: ${device.tagId}) không?`)) return;
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa thiết bị "${device.name}" không?`)) return;
 
     setIsSaving(true);
     try {
@@ -268,9 +267,6 @@ const App: React.FC = () => {
         body: JSON.stringify(payload)
       });
 
-      // Optimistic update
-      setDevices(prev => prev.filter(d => d.id !== id));
-      
       setTimeout(() => {
         setIsSaving(false);
         fetchData();
@@ -286,7 +282,7 @@ const App: React.FC = () => {
     if (!isAdmin) return;
     setIsSaving(true);
     try {
-      const payload = { ...newUser, action: 'ADD_USER', timestamp: new Date().toISOString() };
+      const payload = { ...newUser, action: 'ADD_USER', timestamp: new Date().toISOString(), performedBy: currentUser?.name };
       await fetch(GOOGLE_SCRIPT_APP_URL, {
         method: 'POST',
         mode: 'no-cors',
@@ -310,7 +306,7 @@ const App: React.FC = () => {
     const user = users.find(u => u.id === id);
     if (!user) return;
 
-    if (!window.confirm(`Bạn có chắc chắn muốn xóa người dùng "${user.name}" (Mã NV: ${user.employeeId}) không?`)) return;
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa người dùng "${user.name}" không?`)) return;
 
     setIsSaving(true);
     try {
@@ -329,9 +325,6 @@ const App: React.FC = () => {
         body: JSON.stringify(payload)
       });
 
-      // Optimistic update
-      setUsers(prev => prev.filter(u => u.id !== id));
-
       setTimeout(() => {
         setIsSaving(false);
         fetchData();
@@ -346,18 +339,13 @@ const App: React.FC = () => {
   const handleAssignUser = async (user: User) => {
     if (!assigningDevice || !isAdmin || !currentUser) return;
     setIsSaving(true);
-    const timestamp = new Date().toISOString();
     try {
       const payload = {
         action: 'ASSIGN_DEVICE',
-        deviceId: assigningDevice.id,
         tagId: assigningDevice.tagId,
-        tagid: assigningDevice.tagId,
-        mataisan: assigningDevice.tagId,
-        userId: user.id,
         userName: user.name,
         deviceName: assigningDevice.name,
-        timestamp: timestamp,
+        timestamp: new Date().toISOString(),
         performedBy: currentUser.name
       };
       await fetch(GOOGLE_SCRIPT_APP_URL, {
@@ -387,16 +375,12 @@ const App: React.FC = () => {
       setAssigningDevice(device);
     } else {
       setIsSaving(true);
-      const timestamp = new Date().toISOString();
       try {
         const payload = {
           action: 'RETURN_DEVICE',
-          deviceId: deviceId,
           tagId: device.tagId,
-          tagid: device.tagId,
-          mataisan: device.tagId,
           deviceName: device.name,
-          timestamp: timestamp,
+          timestamp: new Date().toISOString(),
           performedBy: currentUser.name
         };
         await fetch(GOOGLE_SCRIPT_APP_URL, {
@@ -522,7 +506,7 @@ const App: React.FC = () => {
                    </div>
                 </div>
                 
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">AssetFlow v2.4.0</p>
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">AssetFlow v2.5.0</p>
               </div>
             )}
           </>
