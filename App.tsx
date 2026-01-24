@@ -11,85 +11,6 @@ import AssignUserModal from './components/AssignUserModal';
 import EditDeviceModal from './components/EditDeviceModal';
 import IdentificationView from './components/IdentificationView';
 
-/* 
-  MÃ NGUỒN GOOGLE APPS SCRIPT CẬP NHẬT (Dán vào Apps Script của bạn):
-
-  function doPost(e) {
-    var data = JSON.parse(e.postData.contents);
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var devSheet = ss.getSheets()[0];
-    
-    if (data.action === 'ADD_DEVICE') {
-      // Thứ tự 11 cột: ID, TagID, Name, Type, Location, Configuration, Accessory, Note, Status, AssignedTo, LastUpdated
-      devSheet.appendRow([
-        "ID-" + Date.now(), 
-        data.tagId, 
-        data.name, 
-        data.type, 
-        data.location, 
-        data.configuration, 
-        data.accessory || "", 
-        data.note || "", 
-        "AVAILABLE", 
-        "", 
-        data.timestamp
-      ]);
-    } 
-    else if (data.action === 'ADD_USER') {
-      var sheet = ss.getSheetByName("Users") || ss.insertSheet("Users");
-      sheet.appendRow(["U-" + Date.now(), data.name, data.employeeId, data.role, data.timestamp]);
-    }
-    else if (data.action === 'EDIT_DEVICE') {
-      var devData = devSheet.getDataRange().getValues();
-      var tagIdToFind = data.tagId || data.tagid || data.mataisan;
-      
-      for (var i = 1; i < devData.length; i++) {
-        if (devData[i][1] == tagIdToFind) { 
-          devSheet.getRange(i + 1, 3).setValue(data.name);          // C: Tên
-          devSheet.getRange(i + 1, 4).setValue(data.type);          // D: Loại
-          devSheet.getRange(i + 1, 5).setValue(data.location);      // E: Vị trí
-          devSheet.getRange(i + 1, 6).setValue(data.configuration); // F: Cấu hình
-          devSheet.getRange(i + 1, 7).setValue(data.accessory || "");// G: Phụ kiện (MỚI)
-          devSheet.getRange(i + 1, 8).setValue(data.note || "");     // H: Ghi chú (MỚI)
-          devSheet.getRange(i + 1, 9).setValue(data.status);        // I: Trạng thái
-          devSheet.getRange(i + 1, 11).setValue(data.timestamp);    // K: Cập nhật cuối
-          break;
-        }
-      }
-    }
-    else if (data.action === 'ASSIGN_DEVICE' || data.action === 'RETURN_DEVICE') {
-      var devData = devSheet.getDataRange().getValues();
-      var tagIdToFind = data.tagId || data.tagid || data.mataisan;
-      
-      for (var i = 1; i < devData.length; i++) {
-        if (devData[i][1] == tagIdToFind) { 
-          var newStatus = (data.action === 'ASSIGN_DEVICE') ? 'ASSIGNED' : 'AVAILABLE';
-          var assignedTo = (data.action === 'ASSIGN_DEVICE') ? data.userName : "";
-          devSheet.getRange(i + 1, 9).setValue(newStatus);          // I: Trạng thái
-          devSheet.getRange(i + 1, 10).setValue(assignedTo);        // J: Người dùng
-          devSheet.getRange(i + 1, 11).setValue(data.timestamp);    // K: Cập nhật cuối
-          break;
-        }
-      }
-      
-      var histSheet = ss.getSheetByName("History") || ss.insertSheet("History");
-      if (histSheet.getLastRow() === 0) {
-        histSheet.appendRow(["Timestamp", "Tag ID", "Action", "Performed By", "Target User"]);
-      }
-      histSheet.appendRow([
-        data.timestamp, 
-        tagIdToFind, 
-        data.action, 
-        data.performedBy || "Admin", 
-        data.userName || "Kho/Storage"
-      ]);
-    }
-    
-    return ContentService.createTextOutput(JSON.stringify({ "result": "success" }))
-      .setMimeType(ContentService.MimeType.JSON);
-  }
-*/
-
 const DEVICES_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSPQVVjmPXRJE3w0PhujorFo-Uj8mVwJ4Aa20i6LmsZpgmk-3pUsqajXf8Bhm68XXnROzierh4SITQ5/pub?gid=0&single=true&output=csv';
 const USERS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSPQVVjmPXRJE3w0PhujorFo-Uj8mVwJ4Aa20i6LmsZpgmk-3pUsqajXf8Bhm68XXnROzierh4SITQ5/pub?gid=1789914936&single=true&output=csv';
 const HISTORY_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSPQVVjmPXRJE3w0PhujorFo-Uj8mVwJ4Aa20i6LmsZpgmk-3pUsqajXf8Bhm68XXnROzierh4SITQ5/pub?gid=801829903&single=true&output=csv';
@@ -198,7 +119,7 @@ const App: React.FC = () => {
         note: d.note || d.ghichu || d['ghichú'] || '',
         status: (d.status?.toUpperCase() as AssetStatus) || 'AVAILABLE',
         assignedTo: d.assignedto || d.nguoisudung || d['ngườisửdụng'] || undefined,
-        lastUpdated: d.lastupdated || new Date().toISOString()
+        lastUpdated: d.lastupdated || d.timestamp || d.capnhatcuoi || d['cậpnhậtcuối'] || d['cậpnhậtlầncuối'] || new Date().toISOString()
       }));
       setDevices(formattedDevices);
 
@@ -323,6 +244,44 @@ const App: React.FC = () => {
     }
   };
 
+  const handleDeleteDevice = async (id: string) => {
+    if (!isAdmin) return;
+    const device = devices.find(d => d.id === id);
+    if (!device) return;
+
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa thiết bị "${device.name}" (ID: ${device.tagId}) không?`)) return;
+
+    setIsSaving(true);
+    try {
+      const payload = {
+        action: 'DELETE_DEVICE',
+        tagId: device.tagId,
+        deviceName: device.name,
+        timestamp: new Date().toISOString(),
+        performedBy: currentUser?.name
+      };
+
+      await fetch(GOOGLE_SCRIPT_APP_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify(payload)
+      });
+
+      // Optimistic update
+      setDevices(prev => prev.filter(d => d.id !== id));
+      
+      setTimeout(() => {
+        setIsSaving(false);
+        fetchData();
+      }, 2000);
+    } catch (err) {
+      console.error(err);
+      setIsSaving(false);
+      fetchData();
+    }
+  };
+
   const handleAddUser = async (newUser: Omit<User, 'id' | 'avatarUrl'>) => {
     if (!isAdmin) return;
     setIsSaving(true);
@@ -343,6 +302,44 @@ const App: React.FC = () => {
     } catch (err) {
       console.error(err);
       setIsSaving(false);
+    }
+  };
+
+  const handleDeleteUser = async (id: string) => {
+    if (!isAdmin) return;
+    const user = users.find(u => u.id === id);
+    if (!user) return;
+
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa người dùng "${user.name}" (Mã NV: ${user.employeeId}) không?`)) return;
+
+    setIsSaving(true);
+    try {
+      const payload = {
+        action: 'DELETE_USER',
+        employeeId: user.employeeId,
+        name: user.name,
+        timestamp: new Date().toISOString(),
+        performedBy: currentUser?.name
+      };
+
+      await fetch(GOOGLE_SCRIPT_APP_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify(payload)
+      });
+
+      // Optimistic update
+      setUsers(prev => prev.filter(u => u.id !== id));
+
+      setTimeout(() => {
+        setIsSaving(false);
+        fetchData();
+      }, 2000);
+    } catch (err) {
+      console.error(err);
+      setIsSaving(false);
+      fetchData();
     }
   };
 
@@ -446,7 +443,7 @@ const App: React.FC = () => {
         </div>
         <div className="flex items-center gap-1">
           <button onClick={fetchData} className="text-slate-500 p-2 rounded-full hover:bg-slate-100">
-            <span className={`material-symbols-outlined ${isLoading ? 'animate-spin' : ''}`}>sync</span>
+            <span className={`material-symbols-outlined ${isLoading || isSaving ? 'animate-spin' : ''}`}>sync</span>
           </button>
         </div>
       </header>
@@ -473,6 +470,7 @@ const App: React.FC = () => {
                 onViewAll={() => setActiveTab('devices')} 
                 onAction={handleAction} 
                 onEdit={setEditingDevice} 
+                onDelete={handleDeleteDevice}
                 isAdmin={isAdmin}
                 onSearch={handleDashboardSearch}
               />
@@ -482,15 +480,22 @@ const App: React.FC = () => {
                 devices={visibleDevices} 
                 onAction={handleAction} 
                 onEdit={setEditingDevice} 
+                onDelete={handleDeleteDevice}
                 isAdmin={isAdmin}
                 searchTerm={searchTerm}
                 setSearchTerm={setSearchTerm}
               />
             )}
-            {activeTab === 'users' && <UsersView users={users} />}
+            {activeTab === 'users' && (
+              <UsersView 
+                users={users} 
+                isAdmin={isAdmin} 
+                onDelete={handleDeleteUser} 
+              />
+            )}
             {activeTab === 'settings' && (
               <div className="flex flex-col items-center justify-center h-full pt-10 space-y-6">
-                <div className="bg-white p-8 rounded-[40px] border border-slate-100 shadow-xl w-full max-w-sm text-center transform transition-all hover:scale-[1.02]">
+                <div className="bg-white p-8 rounded-[40px] border border-slate-100 shadow-xl w-full max-sm text-center transform transition-all hover:scale-[1.02]">
                    <div className="w-24 h-24 bg-primary/5 rounded-full flex items-center justify-center mx-auto mb-6 border-4 border-white shadow-inner relative">
                       {currentUser.avatarUrl ? (
                          <img src={currentUser.avatarUrl} className="w-full h-full object-cover rounded-full" />
@@ -541,6 +546,15 @@ const App: React.FC = () => {
       {isAddUserOpen && <AddUserModal onClose={() => setIsAddUserOpen(false)} onSubmit={handleAddUser} isSaving={isSaving} />}
       {assigningDevice && <AssignUserModal users={users} onClose={() => setAssigningDevice(null)} onSubmit={handleAssignUser} isSaving={isSaving} />}
       {editingDevice && <EditDeviceModal device={editingDevice} onClose={() => setEditingDevice(null)} onSubmit={handleEditDevice} isSaving={isSaving} />}
+      
+      {isSaving && (
+        <div className="fixed top-20 right-4 z-50 animate-slideIn">
+           <div className="bg-white border border-primary/20 shadow-xl rounded-2xl px-4 py-3 flex items-center gap-3">
+              <div className="w-5 h-5 border-2 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+              <span className="text-xs font-bold text-slate-600">Đang đồng bộ Sheet...</span>
+           </div>
+        </div>
+      )}
     </div>
   );
 };
