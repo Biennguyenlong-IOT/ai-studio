@@ -28,7 +28,7 @@ export interface HistoryEntry {
   id: string;
   deviceId: string;
   deviceName: string;
-  action: 'ASSIGN' | 'RETURN' | 'UPDATE' | 'REPAIR';
+  action: string; // Cho phép nhận giá trị thô từ cột Action của Sheet
   timestamp: string;
   performer: string;
   target?: string;
