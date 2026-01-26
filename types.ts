@@ -1,6 +1,6 @@
 
 export type AssetStatus = 'AVAILABLE' | 'ASSIGNED' | 'PENDING' | 'REPAIR';
-export type UserRole = 'ADMIN' | 'STAFF';
+export type UserRole = 'ADMIN' | 'OPERATION' | 'STAFF';
 
 export interface Device {
   id: string;
