@@ -72,27 +72,33 @@ const App: React.FC = () => {
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
 
-      setDevices((data.devices || []).map((d: any, index: number) => ({
-        id: d.id || d.tagid || `dev-${index}`,
-        tagId: d.tagid || 'N/A',
-        name: d.name || 'Không tên',
-        type: d.type || 'Khác',
-        location: d.location || 'Chưa rõ',
-        configuration: d.configuration || '',
-        accessory: d.accessory || '',
-        note: d.note || '',
-        status: (d.status?.toString().toUpperCase() as AssetStatus) || 'AVAILABLE',
-        assignedTo: d.assignedto || undefined,
-        lastUpdated: d.lastupdated || new Date().toISOString()
-      })));
+      setDevices((data.devices || []).map((d: any, index: number) => {
+        const id = d.id || `dev-${d.tagid || index}`;
+        return {
+          id: id.startsWith('dev-') ? id : `dev-${id}`,
+          tagId: d.tagid || 'N/A',
+          name: d.name || 'Không tên',
+          type: d.type || 'Khác',
+          location: d.location || 'Chưa rõ',
+          configuration: d.configuration || '',
+          accessory: d.accessory || '',
+          note: d.note || '',
+          status: (d.status?.toString().toUpperCase() as AssetStatus) || 'AVAILABLE',
+          assignedTo: d.assignedto || undefined,
+          lastUpdated: d.lastupdated || new Date().toISOString()
+        };
+      }));
 
-      setUsers((data.users || []).map((u: any, index: number) => ({
-        id: u.id || u.employeeid || `user-${index}`,
-        name: u.name || 'Unknown User',
-        employeeId: u.employeeid || 'N/A',
-        role: (u.role?.toString().toUpperCase() as any) || 'STAFF',
-        avatarUrl: u.avatarurl || undefined
-      })));
+      setUsers((data.users || []).map((u: any, index: number) => {
+        const id = u.id || `user-${u.employeeid || index}`;
+        return {
+          id: id.startsWith('user-') ? id : `user-${id}`,
+          name: u.name || 'Unknown User',
+          employeeId: u.employeeid || 'N/A',
+          role: (u.role?.toString().toUpperCase() as any) || 'STAFF',
+          avatarUrl: u.avatarurl || undefined
+        };
+      }));
 
       setHistory((data.history || []).map((h: any, index: number) => {
         let normalizedAction: HistoryEntry['action'] = 'UPDATE';
@@ -100,8 +106,10 @@ const App: React.FC = () => {
         if (rawAction.includes('ASSIGN')) normalizedAction = 'ASSIGN';
         else if (rawAction.includes('RETURN')) normalizedAction = 'RETURN';
         else if (rawAction.includes('REPAIR')) normalizedAction = 'REPAIR';
+        
+        const id = h.id || `hist-${index}`;
         return {
-          id: h.id || `hist-${index}`,
+          id: id.startsWith('hist-') ? id : `hist-${id}`,
           deviceId: h.tagid || 'N/A',
           deviceName: h.devicename || 'N/A',
           action: normalizedAction,
