@@ -13,41 +13,47 @@ const TimelineItem: React.FC<TimelineItemProps> = ({ entry }) => {
       return {
         label: 'Cấp phát',
         color: 'bg-red-100 text-red-600',
-        dotColor: 'bg-red-500'
+        dotColor: 'bg-red-500',
+        actionColor: 'text-red-600'
       };
     }
     if (act.includes('RETURN')) {
       return {
         label: 'Thu hồi',
         color: 'bg-blue-100 text-blue-600',
-        dotColor: 'bg-blue-500'
+        dotColor: 'bg-blue-500',
+        actionColor: 'text-blue-600'
       };
     }
     if (act.includes('REPAIR')) {
       return {
         label: 'Sửa chữa',
         color: 'bg-amber-100 text-amber-600',
-        dotColor: 'bg-amber-500'
+        dotColor: 'bg-amber-500',
+        actionColor: 'text-amber-600'
       };
     }
     if (act.includes('CREATE') || act.includes('ADD')) {
       return {
         label: 'Thêm mới',
         color: 'bg-green-100 text-green-600',
-        dotColor: 'bg-green-500'
+        dotColor: 'bg-green-500',
+        actionColor: 'text-green-600'
       };
     }
     if (act.includes('DELETE')) {
       return {
         label: 'Xóa',
         color: 'bg-slate-100 text-slate-400',
-        dotColor: 'bg-slate-400'
+        dotColor: 'bg-slate-400',
+        actionColor: 'text-slate-500'
       };
     }
     return {
       label: 'Cập nhật',
       color: 'bg-slate-100 text-slate-600',
-      dotColor: 'bg-slate-400'
+      dotColor: 'bg-slate-400',
+      actionColor: 'text-primary'
     };
   };
 
@@ -76,7 +82,7 @@ const TimelineItem: React.FC<TimelineItemProps> = ({ entry }) => {
       <div className={`absolute left-0 top-1.5 w-4 h-4 rounded-full border-4 border-slate-50 ${config.dotColor} z-10 shadow-sm`}></div>
       <div className="bg-white rounded-2xl border border-slate-100 shadow-subtle p-4 hover:border-primary/20 transition-all">
         <div className="flex justify-between items-start mb-2">
-          <h3 className="text-sm font-bold text-slate-800 truncate pr-2">{entry.deviceName}</h3>
+          <h3 className="text-sm font-bold text-slate-800 truncate pr-2 uppercase">{entry.deviceName}</h3>
           <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider flex-shrink-0 ${config.color}`}>
             {config.label}
           </span>
@@ -95,10 +101,12 @@ const TimelineItem: React.FC<TimelineItemProps> = ({ entry }) => {
               )}
             </div>
             <span className="text-[10px] text-slate-600 leading-tight">
-              {/* Thứ tự hiển thị: Target -> Action -> Performer */}
-              <span className="font-bold text-slate-800">{entry.target || 'Kho'}</span> 
-              <span className="mx-1 text-slate-400 font-normal lowercase">{entry.action}</span>
-              <span className="font-bold text-slate-800">{entry.performer}</span>
+              {/* Định dạng mới: [TARGET] ĐÃ [ACTION] BỞI [PERFORMER] */}
+              <span className="font-bold text-slate-900 uppercase">{entry.target || 'KHO'}</span> 
+              <span className="mx-1 text-slate-400 font-bold text-[9px]">ĐÃ</span>
+              <span className={`font-black uppercase ${config.actionColor}`}>{entry.action}</span>
+              <span className="mx-1 text-slate-400 font-bold text-[9px]">BỞI</span>
+              <span className="font-bold text-slate-900 uppercase">{entry.performer}</span>
             </span>
           </div>
         </div>
