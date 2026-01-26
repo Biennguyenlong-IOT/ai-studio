@@ -7,45 +7,54 @@ interface TimelineItemProps {
 }
 
 const TimelineItem: React.FC<TimelineItemProps> = ({ entry }) => {
-  const getActionConfig = (action: HistoryEntry['action']) => {
-    switch (action) {
-      case 'ASSIGN':
-        return {
-          label: 'Cấp phát',
-          color: 'bg-red-100 text-red-600',
-          dotColor: 'bg-red-500',
-          verb: 'đã cấp cho'
-        };
-      case 'RETURN':
-        return {
-          label: 'Thu hồi',
-          color: 'bg-blue-100 text-blue-600',
-          dotColor: 'bg-blue-500',
-          verb: 'đã thu hồi từ'
-        };
-      case 'REPAIR':
-        return {
-          label: 'Sửa chữa',
-          color: 'bg-amber-100 text-amber-600',
-          dotColor: 'bg-amber-500',
-          verb: 'đưa đi sửa bởi'
-        };
-      default:
-        return {
-          label: 'Cập nhật',
-          color: 'bg-slate-100 text-slate-600',
-          dotColor: 'bg-slate-400',
-          verb: 'đã cập nhật bởi'
-        };
+  const getActionConfig = (action: string) => {
+    const act = action.toUpperCase();
+    if (act.includes('ASSIGN')) {
+      return {
+        label: 'Cấp phát',
+        color: 'bg-red-100 text-red-600',
+        dotColor: 'bg-red-500'
+      };
     }
+    if (act.includes('RETURN')) {
+      return {
+        label: 'Thu hồi',
+        color: 'bg-blue-100 text-blue-600',
+        dotColor: 'bg-blue-500'
+      };
+    }
+    if (act.includes('REPAIR')) {
+      return {
+        label: 'Sửa chữa',
+        color: 'bg-amber-100 text-amber-600',
+        dotColor: 'bg-amber-500'
+      };
+    }
+    if (act.includes('CREATE') || act.includes('ADD')) {
+      return {
+        label: 'Thêm mới',
+        color: 'bg-green-100 text-green-600',
+        dotColor: 'bg-green-500'
+      };
+    }
+    if (act.includes('DELETE')) {
+      return {
+        label: 'Xóa',
+        color: 'bg-slate-100 text-slate-400',
+        dotColor: 'bg-slate-400'
+      };
+    }
+    return {
+      label: 'Cập nhật',
+      color: 'bg-slate-100 text-slate-600',
+      dotColor: 'bg-slate-400'
+    };
   };
 
   const config = getActionConfig(entry.action);
   
-  // Hàm định dạng thời gian (nếu App.tsx truyền vào chuỗi ISO chưa xử lý)
   const displayTimestamp = () => {
     if (!entry.timestamp) return 'Không rõ';
-    // Nếu đã là định dạng Việt Nam (có dấu / hoặc :) thì trả về luôn
     if (entry.timestamp.includes('/') || entry.timestamp.includes(':')) return entry.timestamp;
     
     try {
@@ -86,9 +95,10 @@ const TimelineItem: React.FC<TimelineItemProps> = ({ entry }) => {
               )}
             </div>
             <span className="text-[10px] text-slate-600 leading-tight">
-              <span className="font-bold text-slate-800">{entry.performer}</span> 
-              <span className="mx-1 text-slate-400 font-normal">{config.verb}</span>
-              <span className="font-bold text-slate-800">{entry.target || 'Kho'}</span>
+              {/* Thứ tự hiển thị: Target -> Action -> Performer */}
+              <span className="font-bold text-slate-800">{entry.target || 'Kho'}</span> 
+              <span className="mx-1 text-slate-400 font-normal lowercase">{entry.action}</span>
+              <span className="font-bold text-slate-800">{entry.performer}</span>
             </span>
           </div>
         </div>
