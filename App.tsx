@@ -188,9 +188,18 @@ const App: React.FC = () => {
     if (!isManagement) return;
     const device = devices.find(d => d.id === deviceId);
     if (!device) return;
-    if (action === 'ASSIGN') setAssigningDevice(device);
-    else if (window.confirm(`Thu hồi ${device.name}?`)) {
-      sendPostRequest({ action: 'RETURN_DEVICE', tagId: device.tagId, timestamp: new Date().toISOString(), performedBy: currentUser?.name });
+    
+    if (action === 'ASSIGN') {
+      if (device.status !== 'AVAILABLE') {
+        alert("Thiết bị này không sẵn sàng để cấp phát.");
+        return;
+      }
+      setAssigningDevice(device);
+    } else if (action === 'RETURN') {
+      if (device.status !== 'ASSIGNED') return;
+      if (window.confirm(`Thu hồi ${device.name}?`)) {
+        sendPostRequest({ action: 'RETURN_DEVICE', tagId: device.tagId, timestamp: new Date().toISOString(), performedBy: currentUser?.name });
+      }
     }
   };
 
