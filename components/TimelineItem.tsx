@@ -42,6 +42,26 @@ const TimelineItem: React.FC<TimelineItemProps> = ({ entry }) => {
 
   const config = getActionConfig(entry.action);
   
+  // Hàm định dạng thời gian (nếu App.tsx truyền vào chuỗi ISO chưa xử lý)
+  const displayTimestamp = () => {
+    if (!entry.timestamp) return 'Không rõ';
+    // Nếu đã là định dạng Việt Nam (có dấu / hoặc :) thì trả về luôn
+    if (entry.timestamp.includes('/') || entry.timestamp.includes(':')) return entry.timestamp;
+    
+    try {
+      const date = new Date(entry.timestamp);
+      if (isNaN(date.getTime())) return entry.timestamp;
+      return new Intl.DateTimeFormat('vi-VN', {
+        hour: '2-digit',
+        minute: '2-digit',
+        day: '2-digit',
+        month: '2-digit'
+      }).format(date);
+    } catch {
+      return entry.timestamp;
+    }
+  };
+
   return (
     <div className="relative pl-8 animate-slideIn">
       <div className={`absolute left-0 top-1.5 w-4 h-4 rounded-full border-4 border-slate-50 ${config.dotColor} z-10 shadow-sm`}></div>
@@ -55,7 +75,7 @@ const TimelineItem: React.FC<TimelineItemProps> = ({ entry }) => {
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <span className="material-symbols-outlined text-slate-400 text-[14px]">schedule</span>
-            <span className="text-[10px] text-slate-500 font-medium">{entry.timestamp}</span>
+            <span className="text-[10px] text-slate-500 font-medium">{displayTimestamp()}</span>
           </div>
           <div className="flex items-center gap-2 pt-1 border-t border-slate-50">
             <div className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden border border-slate-200">
