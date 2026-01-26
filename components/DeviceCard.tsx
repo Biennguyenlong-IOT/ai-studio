@@ -14,6 +14,7 @@ interface DeviceCardProps {
 const DeviceCard: React.FC<DeviceCardProps> = ({ device, onAction, onEdit, onDelete, isAdmin, isManagement }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const isAssigned = device.status === 'ASSIGNED';
+  const isAvailable = device.status === 'AVAILABLE';
   
   const getStatusStyles = (status: AssetStatus) => {
     switch (status) {
@@ -25,6 +26,16 @@ const DeviceCard: React.FC<DeviceCardProps> = ({ device, onAction, onEdit, onDel
     }
   };
 
+  const getStatusLabel = (status: AssetStatus) => {
+    switch (status) {
+      case 'AVAILABLE': return 'Sẵn sàng';
+      case 'ASSIGNED': return 'Đang sử dụng';
+      case 'PENDING': return 'Chờ duyệt';
+      case 'REPAIR': return 'Sửa chữa';
+      default: return status;
+    }
+  };
+
   return (
     <div onClick={() => setIsExpanded(!isExpanded)} className={`bg-white rounded-2xl border border-slate-100 shadow-subtle overflow-hidden flex flex-col transition-all cursor-pointer ${isExpanded ? 'ring-2 ring-primary/20' : ''}`}>
       <div className="p-4">
@@ -33,7 +44,7 @@ const DeviceCard: React.FC<DeviceCardProps> = ({ device, onAction, onEdit, onDel
             <h3 className="font-bold text-slate-800 text-base truncate">{device.name}</h3>
             <p className="text-xs text-slate-400">ID: {device.tagId} • <span className="text-primary font-bold uppercase">{device.type}</span></p>
           </div>
-          <span className={`text-[10px] px-2.5 py-1 rounded-full font-bold uppercase ${getStatusStyles(device.status)}`}>{device.status}</span>
+          <span className={`text-[10px] px-2.5 py-1 rounded-full font-bold uppercase ${getStatusStyles(device.status)}`}>{getStatusLabel(device.status)}</span>
         </div>
         
         {isAssigned && device.assignedTo && (
@@ -67,24 +78,28 @@ const DeviceCard: React.FC<DeviceCardProps> = ({ device, onAction, onEdit, onDel
         <div onClick={(e) => e.stopPropagation()} className="border-t border-slate-50 p-3 bg-slate-50/30 flex gap-2">
           {/* Nút EDIT chỉ hiện cho ADMIN */}
           {isAdmin && (
-            <button onClick={() => onEdit(device)} className="flex-1 bg-white border border-slate-200 py-2 rounded-lg text-xs font-bold text-slate-600 flex items-center justify-center gap-1.5">
+            <button onClick={() => onEdit(device)} className="flex-1 bg-white border border-slate-200 py-2 rounded-lg text-xs font-bold text-slate-600 flex items-center justify-center gap-1.5 hover:bg-slate-50">
               <span className="material-symbols-outlined text-[16px]">edit</span> Sửa
             </button>
           )}
           
-          {/* Nút ASSIGN/RETURN hiện cho cả ADMIN và OPERATION */}
+          {/* Nút Hành động: Cấp phát / Thu hồi / Khóa */}
           {isAssigned ? (
-            <button onClick={() => onAction(device.id, 'RETURN')} className="flex-1 bg-white border border-slate-200 py-2 rounded-lg text-xs font-bold text-slate-600 flex items-center justify-center gap-1.5">
+            <button onClick={() => onAction(device.id, 'RETURN')} className="flex-1 bg-white border border-slate-200 py-2 rounded-lg text-xs font-bold text-slate-600 flex items-center justify-center gap-1.5 hover:bg-slate-50">
               <span className="material-symbols-outlined text-[16px]">keyboard_return</span> Thu hồi
             </button>
-          ) : (
-            <button onClick={() => onAction(device.id, 'ASSIGN')} className="flex-1 bg-primary text-white py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5">
+          ) : isAvailable ? (
+            <button onClick={() => onAction(device.id, 'ASSIGN')} className="flex-1 bg-primary text-white py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-blue-600">
               <span className="material-symbols-outlined text-[16px]">person_add</span> Cấp phát
             </button>
+          ) : (
+            <div className="flex-1 bg-slate-100 border border-slate-200 py-2 rounded-lg text-xs font-bold text-slate-400 flex items-center justify-center gap-1.5 cursor-not-allowed">
+              <span className="material-symbols-outlined text-[16px]">lock</span> {device.status === 'PENDING' ? 'Đang chờ' : 'Đang sửa'}
+            </div>
           )}
 
-          {/* Nút DELETE chỉ hiện cho ADMIN khi là PENDING */}
-          {isAdmin && device.status === 'PENDING' && (
+          {/* Nút DELETE chỉ hiện cho ADMIN khi là PENDING hoặc AVAILABLE */}
+          {isAdmin && (device.status === 'PENDING' || device.status === 'AVAILABLE') && (
             <button onClick={() => onDelete(device.id)} className="w-10 h-10 bg-white border border-red-100 rounded-lg text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all">
               <span className="material-symbols-outlined text-[20px]">delete</span>
             </button>
