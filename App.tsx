@@ -9,6 +9,7 @@ import AddDeviceModal from './components/AddDeviceModal';
 import AddUserModal from './components/AddUserModal';
 import AssignUserModal from './components/AssignUserModal';
 import EditDeviceModal from './components/EditDeviceModal';
+import EditUserModal from './components/EditUserModal';
 import IdentificationView from './components/IdentificationView';
 
 const GOOGLE_SCRIPT_APP_URL = 'https://script.google.com/macros/s/AKfycbywRpgG-YElFth55EkcjLYQgH4bepTf_yMYsVI9X2ktgf9hABt6sxxa-D7Tj2ySf7Q1/exec'.trim();
@@ -25,20 +26,21 @@ const App: React.FC = () => {
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   const [assigningDevice, setAssigningDevice] = useState<Device | null>(null);
   const [editingDevice, setEditingDevice] = useState<Device | null>(null);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<{ message: string; details?: string; isNetworkError?: boolean } | null>(null);
 
-  // Phân quyền chi tiết
   const isAdmin = currentUser?.role === 'ADMIN';
   const isOperation = currentUser?.role === 'OPERATION';
-  const isManagement = isAdmin || isOperation; // Những người có quyền điều hành (Admin + Operation)
+  const isManagement = isAdmin || isOperation;
 
   const existingTagIds = useMemo(() => devices.map(d => d.tagId), [devices]);
 
   const visibleDevices = useMemo(() => {
     if (!currentUser) return [];
-    if (isManagement) return devices; // Operation & Admin thấy hết để cấp phát
+    if (isManagement) return devices;
     return devices.filter(d => 
       d.assignedTo === currentUser.name || 
       d.assignedTo === currentUser.employeeId
@@ -137,6 +139,7 @@ const App: React.FC = () => {
         setIsAddDeviceOpen(false);
         setIsAddUserOpen(false);
         setEditingDevice(null);
+        setEditingUser(null);
         setAssigningDevice(null);
       }, 2000);
     } catch (err: any) {
@@ -146,17 +149,17 @@ const App: React.FC = () => {
   };
 
   const handleAddDevice = (newDevice: any) => {
-    if (!isAdmin) return; // Chỉ Admin mới thêm được thiết bị
+    if (!isAdmin) return;
     sendPostRequest({ ...newDevice, action: 'ADD_DEVICE', timestamp: new Date().toISOString(), performedBy: currentUser?.name });
   };
 
   const handleEditDevice = (updatedDevice: Device) => {
-    if (!isAdmin) return; // Chỉ Admin mới được sửa thông tin gốc
+    if (!isAdmin) return;
     sendPostRequest({ ...updatedDevice, action: 'EDIT_DEVICE', tagId: updatedDevice.tagId, timestamp: new Date().toISOString(), performedBy: currentUser?.name });
   };
 
   const handleDeleteDevice = (id: string) => {
-    if (!isAdmin) return; // Chỉ Admin mới được xóa
+    if (!isAdmin) return;
     const device = devices.find(d => d.id === id);
     if (device && window.confirm(`Xóa thiết bị ${device.name}?`)) {
       sendPostRequest({ action: 'DELETE_DEVICE', tagId: device.tagId, timestamp: new Date().toISOString(), performedBy: currentUser?.name });
@@ -164,12 +167,17 @@ const App: React.FC = () => {
   };
 
   const handleAddUser = (newUser: any) => {
-    if (!isManagement) return; // Cả Admin và Operation đều thêm được User
+    if (!isManagement) return;
     sendPostRequest({ ...newUser, action: 'ADD_USER', timestamp: new Date().toISOString(), performedBy: currentUser?.name });
   };
 
+  const handleEditUser = (updatedUser: User) => {
+    if (!isAdmin) return;
+    sendPostRequest({ ...updatedUser, action: 'EDIT_USER', timestamp: new Date().toISOString(), performedBy: currentUser?.name });
+  };
+
   const handleDeleteUser = (id: string) => {
-    if (!isAdmin) return; // Chỉ Admin mới được xóa nhân sự
+    if (!isAdmin) return;
     const user = users.find(u => u.id === id);
     if (user && window.confirm(`Xóa nhân sự ${user.name}?`)) {
       sendPostRequest({ action: 'DELETE_USER', employeeId: user.employeeId, timestamp: new Date().toISOString(), performedBy: currentUser?.name });
@@ -177,7 +185,7 @@ const App: React.FC = () => {
   };
 
   const handleAction = (deviceId: string, action: 'ASSIGN' | 'RETURN') => {
-    if (!isManagement) return; // Admin & Operation đều cấp phát/thu hồi được
+    if (!isManagement) return;
     const device = devices.find(d => d.id === deviceId);
     if (!device) return;
     if (action === 'ASSIGN') setAssigningDevice(device);
@@ -191,7 +199,6 @@ const App: React.FC = () => {
     else if (activeTab === 'devices' && isAdmin) setIsAddDeviceOpen(true);
   };
 
-  // Logic hiển thị FAB
   const showFab = (activeTab === 'users' && isManagement) || (activeTab === 'devices' && isAdmin);
 
   if (!currentUser) return <IdentificationView users={users} onSelect={handleIdentify} isLoading={isLoading} />;
@@ -218,7 +225,7 @@ const App: React.FC = () => {
       <main className="flex-1 overflow-y-auto px-4 pt-6 pb-12">
         {activeTab === 'dashboard' && <DashboardView devices={visibleDevices} history={visibleHistory} onViewAll={() => setActiveTab('devices')} onAction={handleAction} onEdit={setEditingDevice} onDelete={handleDeleteDevice} isAdmin={isAdmin} isManagement={isManagement} onSearch={(v) => { setSearchTerm(v); setActiveTab('devices'); }} />}
         {activeTab === 'devices' && <DevicesView devices={visibleDevices} onAction={handleAction} onEdit={setEditingDevice} onDelete={handleDeleteDevice} isAdmin={isAdmin} isManagement={isManagement} searchTerm={searchTerm} setSearchTerm={setSearchTerm} />}
-        {activeTab === 'users' && <UsersView users={users} isAdmin={isAdmin} isManagement={isManagement} onDelete={handleDeleteUser} />}
+        {activeTab === 'users' && <UsersView users={users} isAdmin={isAdmin} isManagement={isManagement} onDelete={handleDeleteUser} onEditUser={setEditingUser} />}
         {activeTab === 'settings' && (
           <div className="flex flex-col items-center justify-center pt-10 space-y-6">
             <div className="bg-white p-8 rounded-[40px] border border-slate-100 shadow-xl w-full text-center">
@@ -246,6 +253,7 @@ const App: React.FC = () => {
       {isAddUserOpen && <AddUserModal onClose={() => setIsAddUserOpen(false)} onSubmit={handleAddUser} isSaving={isSaving} />}
       {assigningDevice && <AssignUserModal users={users} onClose={() => setAssigningDevice(null)} onSubmit={(u) => sendPostRequest({ action: 'ASSIGN_DEVICE', tagId: assigningDevice.tagId, userName: u.name, timestamp: new Date().toISOString(), performedBy: currentUser?.name })} isSaving={isSaving} />}
       {editingDevice && <EditDeviceModal device={editingDevice} onClose={() => setEditingDevice(null)} onSubmit={handleEditDevice} isSaving={isSaving} />}
+      {editingUser && <EditUserModal user={editingUser} onClose={() => setEditingUser(null)} onSubmit={handleEditUser} isSaving={isSaving} />}
     </div>
   );
 };
