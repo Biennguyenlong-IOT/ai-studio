@@ -32,12 +32,14 @@ const DevicesView: React.FC<DevicesViewProps> = ({ devices, onAction, onEdit, on
     const s = searchTerm.toLowerCase();
     const statusLabel = getStatusLabel(d.status).toLowerCase();
     
+    // Mở rộng logic tìm kiếm: Tên, ID, Người dùng, Trạng thái, Vị trí
     const matchesSearch = 
       d.name.toLowerCase().includes(s) || 
       d.tagId.toLowerCase().includes(s) || 
       (d.assignedTo && d.assignedTo.toLowerCase().includes(s)) ||
       statusLabel.includes(s) ||
-      d.status.toLowerCase().includes(s);
+      d.status.toLowerCase().includes(s) ||
+      d.location.toLowerCase().includes(s);
 
     const matchesCategory = categoryFilter === 'All' || d.type === categoryFilter;
     const matchesStatus = statusFilter === 'All' || d.status === statusFilter;
@@ -62,12 +64,12 @@ const DevicesView: React.FC<DevicesViewProps> = ({ devices, onAction, onEdit, on
       </div>
 
       <div className="space-y-4">
-        {/* Search Bar */}
+        {/* Search Bar - Cập nhật placeholder */}
         <div className="relative">
           <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">search</span>
           <input 
             type="text" 
-            placeholder="Tìm theo tên, ID, người dùng, hoặc trạng thái..."
+            placeholder="Tìm theo tên, ID, người dùng, trạng thái, vị trí..."
             className="w-full bg-white border-slate-200 rounded-2xl py-3.5 pl-12 pr-4 text-sm focus:ring-primary/20 shadow-subtle border transition-all"
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
