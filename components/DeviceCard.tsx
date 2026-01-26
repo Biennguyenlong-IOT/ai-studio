@@ -36,6 +36,25 @@ const DeviceCard: React.FC<DeviceCardProps> = ({ device, onAction, onEdit, onDel
     }
   };
 
+  // Hàm định dạng thời gian thân thiện
+  const formatDateTime = (isoString: string) => {
+    if (!isoString) return 'N/A';
+    try {
+      const date = new Date(isoString);
+      if (isNaN(date.getTime())) return isoString;
+      
+      return new Intl.DateTimeFormat('vi-VN', {
+        hour: '2-digit',
+        minute: '2-digit',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      }).format(date);
+    } catch (e) {
+      return isoString;
+    }
+  };
+
   return (
     <div onClick={() => setIsExpanded(!isExpanded)} className={`bg-white rounded-2xl border border-slate-100 shadow-subtle overflow-hidden flex flex-col transition-all cursor-pointer ${isExpanded ? 'ring-2 ring-primary/20' : ''}`}>
       <div className="p-4">
@@ -69,21 +88,22 @@ const DeviceCard: React.FC<DeviceCardProps> = ({ device, onAction, onEdit, onDel
           <div className="mt-4 pt-4 border-t border-slate-50 space-y-2 animate-fadeIn">
             <p className="text-xs text-slate-500"><b>Phụ kiện:</b> {device.accessory || 'Không'}</p>
             <p className="text-xs text-slate-500"><b>Ghi chú:</b> {device.note || 'Trống'}</p>
-            <p className="text-[10px] text-slate-400 uppercase font-bold">Cập nhật: {device.lastUpdated}</p>
+            <div className="flex items-center gap-1.5 pt-1">
+              <span className="material-symbols-outlined text-[14px] text-slate-400">update</span>
+              <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Cập nhật: {formatDateTime(device.lastUpdated)}</p>
+            </div>
           </div>
         )}
       </div>
       
       {isManagement ? (
         <div onClick={(e) => e.stopPropagation()} className="border-t border-slate-50 p-3 bg-slate-50/30 flex gap-2">
-          {/* Nút EDIT chỉ hiện cho ADMIN */}
           {isAdmin && (
             <button onClick={() => onEdit(device)} className="flex-1 bg-white border border-slate-200 py-2 rounded-lg text-xs font-bold text-slate-600 flex items-center justify-center gap-1.5 hover:bg-slate-50">
               <span className="material-symbols-outlined text-[16px]">edit</span> Sửa
             </button>
           )}
           
-          {/* Nút Hành động: Cấp phát / Thu hồi / Khóa */}
           {isAssigned ? (
             <button onClick={() => onAction(device.id, 'RETURN')} className="flex-1 bg-white border border-slate-200 py-2 rounded-lg text-xs font-bold text-slate-600 flex items-center justify-center gap-1.5 hover:bg-slate-50">
               <span className="material-symbols-outlined text-[16px]">keyboard_return</span> Thu hồi
@@ -98,7 +118,6 @@ const DeviceCard: React.FC<DeviceCardProps> = ({ device, onAction, onEdit, onDel
             </div>
           )}
 
-          {/* Nút DELETE chỉ hiện cho ADMIN khi là PENDING hoặc AVAILABLE */}
           {isAdmin && (device.status === 'PENDING' || device.status === 'AVAILABLE') && (
             <button onClick={() => onDelete(device.id)} className="w-10 h-10 bg-white border border-red-100 rounded-lg text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all">
               <span className="material-symbols-outlined text-[20px]">delete</span>
