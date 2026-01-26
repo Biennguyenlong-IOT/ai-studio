@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Device, HistoryEntry } from '../types';
+import { Device, HistoryEntry, AssetStatus } from '../types';
 import DeviceCard from './DeviceCard';
 import TimelineItem from './TimelineItem';
 
@@ -43,8 +43,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({ devices, history, onViewA
           <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-primary">search</span>
           <input 
             type="text" 
-            placeholder="Tìm nhanh: Tên, mã tài sản..."
-            className="w-full bg-white rounded-2xl py-4 pl-12 pr-4 text-sm text-slate-800"
+            placeholder="Tìm: Tên, mã, trạng thái (Sẵn sàng...)"
+            className="w-full bg-white rounded-2xl py-4 pl-12 pr-4 text-sm text-slate-800 border-none focus:ring-4 focus:ring-white/20 transition-all shadow-xl"
             value={localSearch}
             onChange={e => setLocalSearch(e.target.value)}
           />
@@ -55,9 +55,9 @@ const DashboardView: React.FC<DashboardViewProps> = ({ devices, history, onViewA
         <h2 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-4 px-1">{isManagement ? 'Chỉ số hệ thống' : 'Tài sản cá nhân'}</h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard icon="inventory_2" label="Tổng tài sản" value={stats.total} color="bg-blue-50 text-blue-600" />
-          <StatCard icon="verified" label="Sẵn sàng" value={stats.available} color="bg-green-50 text-green-600" />
-          <StatCard icon="assignment_ind" label="Đang cấp" value={stats.assigned} color="bg-red-50 text-red-600" />
-          <StatCard icon="hourglass_empty" label="Đang chờ" value={stats.pending} color="bg-orange-50 text-orange-600" />
+          <StatCard icon="verified" label="Sẵn sàng" value={stats.available} color="bg-green-50 text-green-600" onClick={() => onSearch('Sẵn sàng')} />
+          <StatCard icon="assignment_ind" label="Đang cấp" value={stats.assigned} color="bg-red-50 text-red-600" onClick={() => onSearch('Đang sử dụng')} />
+          <StatCard icon="hourglass_empty" label="Đang chờ" value={stats.pending} color="bg-orange-50 text-orange-600" onClick={() => onSearch('Chờ duyệt')} />
         </div>
       </section>
 
@@ -84,8 +84,11 @@ const DashboardView: React.FC<DashboardViewProps> = ({ devices, history, onViewA
   );
 };
 
-const StatCard: React.FC<{ icon: string; label: string; value: number; color: string }> = ({ icon, label, value, color }) => (
-  <div className="bg-white p-5 rounded-3xl shadow-subtle border border-slate-100 flex items-center gap-4">
+const StatCard: React.FC<{ icon: string; label: string; value: number; color: string; onClick?: () => void }> = ({ icon, label, value, color, onClick }) => (
+  <div 
+    onClick={onClick}
+    className={`bg-white p-5 rounded-3xl shadow-subtle border border-slate-100 flex items-center gap-4 transition-all ${onClick ? 'cursor-pointer hover:border-primary/30 hover:shadow-lg active:scale-95' : ''}`}
+  >
     <div className={`w-12 h-12 rounded-2xl ${color.split(' ')[0]} flex items-center justify-center`}>
       <span className={`material-symbols-outlined ${color.split(' ')[1]}`}>{icon}</span>
     </div>
