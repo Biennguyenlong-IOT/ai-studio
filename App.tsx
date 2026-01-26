@@ -90,17 +90,19 @@ const App: React.FC = () => {
       }));
 
       setUsers((data.users || []).map((u: any, index: number) => {
+        // Ánh xạ khớp với các cột: ID, Name, Employee_ID, Role, Timestamp, Created_At
         const id = u.id || `user-${u.employeeid || index}`;
         return {
           id: id.startsWith('user-') ? id : `user-${id}`,
           name: u.name || 'Unknown User',
-          employeeId: u.employeeid || 'N/A',
+          employeeId: u.employeeid || 'N/A', // getSheetData đã chuẩn hóa thành employeeid
           role: (u.role?.toString().toUpperCase() as any) || 'STAFF',
           avatarUrl: u.avatarurl || undefined
         };
       }));
 
       setHistory((data.history || []).map((h: any, index: number) => {
+        // Ánh xạ khớp với History: ID, tagId, DeviceName, Action, Timestamp, Performer, Target
         let normalizedAction: HistoryEntry['action'] = 'UPDATE';
         const rawAction = (h.action || '').toString().toUpperCase();
         if (rawAction.includes('ASSIGN')) normalizedAction = 'ASSIGN';
@@ -111,7 +113,7 @@ const App: React.FC = () => {
         return {
           id: id.startsWith('hist-') ? id : `hist-${id}`,
           deviceId: h.tagid || 'N/A',
-          deviceName: h.devicename || 'N/A',
+          deviceName: h.devicename || 'Không rõ',
           action: normalizedAction,
           timestamp: h.timestamp ? new Date(h.timestamp).toLocaleString('vi-VN') : 'Không rõ',
           performer: h.performer || 'Hệ thống',
