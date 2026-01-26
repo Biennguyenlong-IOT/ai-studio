@@ -101,20 +101,12 @@ const App: React.FC = () => {
       }));
 
       setHistory((data.history || []).map((h: any, index: number) => {
-        let normalizedAction: HistoryEntry['action'] = 'UPDATE';
-        const rawAction = (h.action || '').toString().toUpperCase();
-        
-        if (rawAction.includes('ASSIGN')) normalizedAction = 'ASSIGN';
-        else if (rawAction.includes('RETURN')) normalizedAction = 'RETURN';
-        else if (rawAction.includes('REPAIR')) normalizedAction = 'REPAIR';
-        else if (rawAction.includes('USER')) normalizedAction = 'UPDATE'; // Các hành động User coi như Update hệ thống
-
         const id = h.id || `hist-${index}`;
         return {
           id: id.startsWith('hist-') ? id : `hist-${id}`,
           deviceId: h.tagid || 'N/A',
           deviceName: h.devicename || 'Không rõ',
-          action: normalizedAction,
+          action: h.action || 'UPDATE', // Lấy giá trị thô từ Sheet
           timestamp: h.timestamp ? new Date(h.timestamp).toLocaleString('vi-VN') : 'Không rõ',
           performer: h.performer || 'Hệ thống',
           target: h.target || ''
@@ -193,7 +185,7 @@ const App: React.FC = () => {
       sendPostRequest({ 
         action: 'DELETE_USER', 
         employeeId: user.employeeId, 
-        name: user.name, // Gửi tên để backend ghi log chính xác
+        name: user.name, 
         timestamp: new Date().toISOString(), 
         performedBy: currentUser?.name 
       });
