@@ -90,25 +90,25 @@ const App: React.FC = () => {
       }));
 
       setUsers((data.users || []).map((u: any, index: number) => {
-        // Ánh xạ khớp với các cột: ID, Name, Employee_ID, Role, Timestamp, Created_At
         const id = u.id || `user-${u.employeeid || index}`;
         return {
           id: id.startsWith('user-') ? id : `user-${id}`,
           name: u.name || 'Unknown User',
-          employeeId: u.employeeid || 'N/A', // getSheetData đã chuẩn hóa thành employeeid
+          employeeId: u.employeeid || 'N/A',
           role: (u.role?.toString().toUpperCase() as any) || 'STAFF',
           avatarUrl: u.avatarurl || undefined
         };
       }));
 
       setHistory((data.history || []).map((h: any, index: number) => {
-        // Ánh xạ khớp với History: ID, tagId, DeviceName, Action, Timestamp, Performer, Target
         let normalizedAction: HistoryEntry['action'] = 'UPDATE';
         const rawAction = (h.action || '').toString().toUpperCase();
+        
         if (rawAction.includes('ASSIGN')) normalizedAction = 'ASSIGN';
         else if (rawAction.includes('RETURN')) normalizedAction = 'RETURN';
         else if (rawAction.includes('REPAIR')) normalizedAction = 'REPAIR';
-        
+        else if (rawAction.includes('USER')) normalizedAction = 'UPDATE'; // Các hành động User coi như Update hệ thống
+
         const id = h.id || `hist-${index}`;
         return {
           id: id.startsWith('hist-') ? id : `hist-${id}`,
@@ -190,7 +190,13 @@ const App: React.FC = () => {
     if (!isAdmin) return;
     const user = users.find(u => u.id === id);
     if (user && window.confirm(`Xóa nhân sự ${user.name}?`)) {
-      sendPostRequest({ action: 'DELETE_USER', employeeId: user.employeeId, timestamp: new Date().toISOString(), performedBy: currentUser?.name });
+      sendPostRequest({ 
+        action: 'DELETE_USER', 
+        employeeId: user.employeeId, 
+        name: user.name, // Gửi tên để backend ghi log chính xác
+        timestamp: new Date().toISOString(), 
+        performedBy: currentUser?.name 
+      });
     }
   };
 
