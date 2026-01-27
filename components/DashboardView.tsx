@@ -14,10 +14,11 @@ interface DashboardViewProps {
   onSetup: (device: Device) => void;
   isAdmin: boolean;
   isManagement: boolean;
+  setupTagIds: Set<string>;
   onSearch: (val: string) => void;
 }
 
-const DashboardView: React.FC<DashboardViewProps> = ({ devices, history, onViewAll, onAction, onEdit, onDelete, onSetup, isAdmin, isManagement, onSearch }) => {
+const DashboardView: React.FC<DashboardViewProps> = ({ devices, history, onViewAll, onAction, onEdit, onDelete, onSetup, isAdmin, isManagement, setupTagIds, onSearch }) => {
   const [localSearch, setLocalSearch] = useState('');
   const [greeting, setGreeting] = useState('');
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -118,7 +119,17 @@ const DashboardView: React.FC<DashboardViewProps> = ({ devices, history, onViewA
           </div>
           <div className="space-y-4">
             {devices.slice(0, 3).map(device => (
-              <DeviceCard key={device.id} device={device} onAction={onAction} onEdit={onEdit} onDelete={onDelete} onSetup={onSetup} isAdmin={isAdmin} isManagement={isManagement} />
+              <DeviceCard 
+                key={device.id} 
+                device={device} 
+                onAction={onAction} 
+                onEdit={onEdit} 
+                onDelete={onDelete} 
+                onSetup={onSetup} 
+                isAdmin={isAdmin} 
+                isManagement={isManagement} 
+                hasSetup={setupTagIds.has(device.tagId)}
+              />
             ))}
           </div>
         </section>
