@@ -7,11 +7,12 @@ interface DeviceCardProps {
   onAction: (id: string, action: 'ASSIGN' | 'RETURN') => void;
   onEdit: (device: Device) => void;
   onDelete: (id: string) => void;
+  onSetup: (device: Device) => void;
   isAdmin: boolean;
   isManagement: boolean;
 }
 
-const DeviceCard: React.FC<DeviceCardProps> = ({ device, onAction, onEdit, onDelete, isAdmin, isManagement }) => {
+const DeviceCard: React.FC<DeviceCardProps> = ({ device, onAction, onEdit, onDelete, onSetup, isAdmin, isManagement }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const isAssigned = device.status === 'ASSIGNED';
   const isAvailable = device.status === 'AVAILABLE';
@@ -36,7 +37,6 @@ const DeviceCard: React.FC<DeviceCardProps> = ({ device, onAction, onEdit, onDel
     }
   };
 
-  // Hàm định dạng thời gian thân thiện
   const formatDateTime = (isoString: string) => {
     if (!isoString) return 'N/A';
     try {
@@ -97,24 +97,30 @@ const DeviceCard: React.FC<DeviceCardProps> = ({ device, onAction, onEdit, onDel
       </div>
       
       {isManagement ? (
-        <div onClick={(e) => e.stopPropagation()} className="border-t border-slate-50 p-3 bg-slate-50/30 flex gap-2">
+        <div onClick={(e) => e.stopPropagation()} className="border-t border-slate-50 p-3 bg-slate-50/30 flex flex-wrap gap-2">
           {isAdmin && (
-            <button onClick={() => onEdit(device)} className="flex-1 bg-white border border-slate-200 py-2 rounded-lg text-xs font-bold text-slate-600 flex items-center justify-center gap-1.5 hover:bg-slate-50">
+            <button onClick={() => onEdit(device)} className="flex-1 min-w-[70px] bg-white border border-slate-200 py-2 rounded-lg text-xs font-bold text-slate-600 flex items-center justify-center gap-1 hover:bg-slate-50">
               <span className="material-symbols-outlined text-[16px]">edit</span> Sửa
+            </button>
+          )}
+
+          {isAvailable && (
+            <button onClick={() => onSetup(device)} className="flex-1 min-w-[70px] bg-white border border-slate-200 py-2 rounded-lg text-xs font-bold text-slate-600 flex items-center justify-center gap-1 hover:bg-slate-50">
+              <span className="material-symbols-outlined text-[16px]">settings_suggest</span> Setup
             </button>
           )}
           
           {isAssigned ? (
-            <button onClick={() => onAction(device.id, 'RETURN')} className="flex-1 bg-white border border-slate-200 py-2 rounded-lg text-xs font-bold text-slate-600 flex items-center justify-center gap-1.5 hover:bg-slate-50">
+            <button onClick={() => onAction(device.id, 'RETURN')} className="flex-1 min-w-[70px] bg-white border border-slate-200 py-2 rounded-lg text-xs font-bold text-slate-600 flex items-center justify-center gap-1 hover:bg-slate-50">
               <span className="material-symbols-outlined text-[16px]">keyboard_return</span> Thu hồi
             </button>
           ) : isAvailable ? (
-            <button onClick={() => onAction(device.id, 'ASSIGN')} className="flex-1 bg-primary text-white py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-blue-600">
+            <button onClick={() => onAction(device.id, 'ASSIGN')} className="flex-1 min-w-[70px] bg-primary text-white py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1 hover:bg-blue-600">
               <span className="material-symbols-outlined text-[16px]">person_add</span> Cấp phát
             </button>
           ) : (
-            <div className="flex-1 bg-slate-100 border border-slate-200 py-2 rounded-lg text-xs font-bold text-slate-400 flex items-center justify-center gap-1.5 cursor-not-allowed">
-              <span className="material-symbols-outlined text-[16px]">lock</span> {device.status === 'PENDING' ? 'Đang chờ' : 'Đang sửa'}
+            <div className="flex-1 min-w-[70px] bg-slate-100 border border-slate-200 py-2 rounded-lg text-xs font-bold text-slate-400 flex items-center justify-center gap-1 cursor-not-allowed">
+              <span className="material-symbols-outlined text-[16px]">lock</span> {device.status === 'PENDING' ? 'Chờ' : 'Sửa'}
             </div>
           )}
 
