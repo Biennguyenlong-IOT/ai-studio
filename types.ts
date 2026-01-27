@@ -28,11 +28,25 @@ export interface HistoryEntry {
   id: string;
   deviceId: string;
   deviceName: string;
-  action: string; // Cho phép nhận giá trị thô từ cột Action của Sheet
+  action: string;
   timestamp: string;
   performer: string;
   target?: string;
   avatarUrl?: string;
 }
 
-export type TabType = 'dashboard' | 'devices' | 'users' | 'settings';
+export interface SetupData {
+  id: string;
+  tagId: string;
+  win: boolean;
+  unikey: boolean;
+  printer: boolean;
+  snmp: boolean;
+  welink: boolean;
+  welinkMeeting: boolean;
+  codeFormat: string;
+  qrFormat: string;
+  lastUpdated: string;
+}
+
+export type TabType = 'dashboard' | 'devices' | 'users' | 'setup' | 'settings';
