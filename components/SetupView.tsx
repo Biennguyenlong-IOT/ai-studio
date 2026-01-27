@@ -52,6 +52,7 @@ const SetupView: React.FC<SetupViewProps> = ({ setups, onEdit }) => {
                 <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest">Asset ID</th>
                 <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest">SW Status</th>
                 <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest">Code Format</th>
+                <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest text-center">QR</th>
                 <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest">Last Update</th>
                 <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest text-center">Action</th>
               </tr>
@@ -63,15 +64,29 @@ const SetupView: React.FC<SetupViewProps> = ({ setups, onEdit }) => {
                     <span className="text-sm font-bold text-slate-800 font-mono">{setup.tagId}</span>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="flex gap-1.5">
+                    <div className="flex flex-wrap gap-1 max-w-[150px]">
                       <StatusDot active={setup.win} label="W" />
                       <StatusDot active={setup.unikey} label="U" />
                       <StatusDot active={setup.printer} label="P" />
+                      <StatusDot active={setup.snmp} label="SNMP" />
                       <StatusDot active={setup.welink} label="WL" />
+                      <StatusDot active={setup.welinkMeeting} label="WMT" />
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="text-xs text-slate-500 font-medium">{setup.codeFormat}</span>
+                    <span className="text-xs text-slate-500 font-bold font-mono bg-slate-100 px-2 py-1 rounded-lg border border-slate-200">{setup.codeFormat}</span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex justify-center">
+                      <div className="w-14 h-14 bg-white border border-slate-100 rounded-xl overflow-hidden p-1 shadow-sm flex items-center justify-center group hover:scale-150 transition-transform cursor-zoom-in relative z-10 hover:z-50 bg-white">
+                        <img 
+                          src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(setup.codeFormat)}`} 
+                          alt="QR Code" 
+                          className="w-full h-full object-contain"
+                          loading="lazy"
+                        />
+                      </div>
+                    </div>
                   </td>
                   <td className="px-6 py-4">
                     <span className="text-[10px] font-bold text-slate-400 uppercase">{formatDate(setup.lastUpdated)}</span>
@@ -88,7 +103,7 @@ const SetupView: React.FC<SetupViewProps> = ({ setups, onEdit }) => {
               ))}
               {filteredSetups.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="py-20 text-center">
+                  <td colSpan={6} className="py-20 text-center">
                     <span className="material-symbols-outlined text-5xl text-slate-200 mb-2">settings_suggest</span>
                     <p className="text-slate-400 italic">Chưa có dữ liệu thiết lập nào</p>
                   </td>
@@ -105,7 +120,7 @@ const SetupView: React.FC<SetupViewProps> = ({ setups, onEdit }) => {
 const StatusDot: React.FC<{ active: boolean; label: string }> = ({ active, label }) => (
   <div 
     title={label}
-    className={`w-6 h-6 rounded-md flex items-center justify-center text-[8px] font-black border ${
+    className={`px-1.5 h-6 min-w-[24px] rounded-md flex items-center justify-center text-[8px] font-black border transition-all ${
       active ? 'bg-green-500 text-white border-green-600 shadow-sm' : 'bg-slate-100 text-slate-400 border-slate-200'
     }`}
   >
