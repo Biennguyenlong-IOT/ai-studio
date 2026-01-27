@@ -8,13 +8,14 @@ interface DevicesViewProps {
   onAction: (id: string, action: 'ASSIGN' | 'RETURN') => void;
   onEdit: (device: Device) => void;
   onDelete: (id: string) => void;
+  onSetup: (device: Device) => void;
   isAdmin: boolean;
   isManagement: boolean;
   searchTerm: string;
   setSearchTerm: (val: string) => void;
 }
 
-const DevicesView: React.FC<DevicesViewProps> = ({ devices, onAction, onEdit, onDelete, isAdmin, isManagement, searchTerm, setSearchTerm }) => {
+const DevicesView: React.FC<DevicesViewProps> = ({ devices, onAction, onEdit, onDelete, onSetup, isAdmin, isManagement, searchTerm, setSearchTerm }) => {
   const [categoryFilter, setCategoryFilter] = useState<string>('All');
   const [statusFilter, setStatusFilter] = useState<string>('All');
 
@@ -32,7 +33,6 @@ const DevicesView: React.FC<DevicesViewProps> = ({ devices, onAction, onEdit, on
     const s = searchTerm.toLowerCase();
     const statusLabel = getStatusLabel(d.status).toLowerCase();
     
-    // Mở rộng logic tìm kiếm: Tên, ID, Người dùng, Trạng thái, Vị trí
     const matchesSearch = 
       d.name.toLowerCase().includes(s) || 
       d.tagId.toLowerCase().includes(s) || 
@@ -64,7 +64,6 @@ const DevicesView: React.FC<DevicesViewProps> = ({ devices, onAction, onEdit, on
       </div>
 
       <div className="space-y-4">
-        {/* Search Bar - Cập nhật placeholder */}
         <div className="relative">
           <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">search</span>
           <input 
@@ -76,7 +75,6 @@ const DevicesView: React.FC<DevicesViewProps> = ({ devices, onAction, onEdit, on
           />
         </div>
 
-        {/* Category Filters */}
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-2">
             <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Loại:</span>
@@ -95,7 +93,6 @@ const DevicesView: React.FC<DevicesViewProps> = ({ devices, onAction, onEdit, on
             </div>
           </div>
 
-          {/* Status Filters */}
           <div className="flex items-center gap-2">
             <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Tình trạng:</span>
             <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
@@ -126,7 +123,7 @@ const DevicesView: React.FC<DevicesViewProps> = ({ devices, onAction, onEdit, on
       {filteredDevices.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredDevices.map(device => (
-            <DeviceCard key={device.id} device={device} onAction={onAction} onEdit={onEdit} onDelete={onDelete} isAdmin={isAdmin} isManagement={isManagement} />
+            <DeviceCard key={device.id} device={device} onAction={onAction} onEdit={onEdit} onDelete={onDelete} onSetup={onSetup} isAdmin={isAdmin} isManagement={isManagement} />
           ))}
         </div>
       ) : (
