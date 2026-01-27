@@ -11,24 +11,23 @@ interface DashboardViewProps {
   onAction: (id: string, action: 'ASSIGN' | 'RETURN') => void;
   onEdit: (device: Device) => void;
   onDelete: (id: string) => void;
+  onSetup: (device: Device) => void;
   isAdmin: boolean;
   isManagement: boolean;
   onSearch: (val: string) => void;
 }
 
-const DashboardView: React.FC<DashboardViewProps> = ({ devices, history, onViewAll, onAction, onEdit, onDelete, isAdmin, isManagement, onSearch }) => {
+const DashboardView: React.FC<DashboardViewProps> = ({ devices, history, onViewAll, onAction, onEdit, onDelete, onSetup, isAdmin, isManagement, onSearch }) => {
   const [localSearch, setLocalSearch] = useState('');
   const [greeting, setGreeting] = useState('');
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
-    // Cập nhật lời chào dựa trên giờ
     const hour = currentTime.getHours();
     if (hour < 12) setGreeting('Chào buổi sáng');
     else if (hour < 18) setGreeting('Chào buổi chiều');
     else setGreeting('Chào buổi tối');
 
-    // Thiết lập ticker cho đồng hồ
     const timer = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
@@ -36,7 +35,6 @@ const DashboardView: React.FC<DashboardViewProps> = ({ devices, history, onViewA
     return () => clearInterval(timer);
   }, []);
 
-  // Format ngày tháng tiếng Việt
   const formatDate = (date: Date) => {
     const days = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
     const d = days[date.getDay()];
@@ -64,9 +62,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ devices, history, onViewA
 
   return (
     <div className="space-y-8 animate-fadeIn">
-      {/* Hero Section with Time & Calendar */}
       <section className="relative overflow-hidden bg-gradient-to-br from-primary to-blue-700 rounded-[40px] p-6 text-white shadow-2xl">
-        {/* Decorative Background Circles */}
         <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
         <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-blue-400/20 rounded-full blur-2xl"></div>
 
@@ -76,7 +72,6 @@ const DashboardView: React.FC<DashboardViewProps> = ({ devices, history, onViewA
             <p className="text-blue-100 text-sm opacity-90 font-medium">Hệ thống đang phục vụ {isManagement ? 'điều hành' : 'tra cứu'}.</p>
           </div>
 
-          {/* Time & Calendar Widget */}
           <div className="flex items-center gap-4 bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-4 pr-6">
             <div className="bg-white/20 w-12 h-12 rounded-2xl flex items-center justify-center">
               <span className="material-symbols-outlined text-white text-[28px]">calendar_month</span>
@@ -122,9 +117,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({ devices, history, onViewA
             <button onClick={onViewAll} className="text-primary text-xs font-bold">Xem tất cả</button>
           </div>
           <div className="space-y-4">
-            {/* Fix: Changed 'handleDeleteDevice' to 'onDelete' to match the destructured prop */}
             {devices.slice(0, 3).map(device => (
-              <DeviceCard key={device.id} device={device} onAction={onAction} onEdit={onEdit} onDelete={onDelete} isAdmin={isAdmin} isManagement={isManagement} />
+              <DeviceCard key={device.id} device={device} onAction={onAction} onEdit={onEdit} onDelete={onDelete} onSetup={onSetup} isAdmin={isAdmin} isManagement={isManagement} />
             ))}
           </div>
         </section>
