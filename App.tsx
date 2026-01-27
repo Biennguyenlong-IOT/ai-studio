@@ -1,15 +1,17 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { TabType, Device, HistoryEntry, AssetStatus, User } from './types';
+import { TabType, Device, HistoryEntry, AssetStatus, User, SetupData } from './types';
 import DashboardView from './components/DashboardView';
 import DevicesView from './components/DevicesView';
 import UsersView from './components/UsersView';
+import SetupView from './components/SetupView';
 import Navigation from './components/Navigation';
 import AddDeviceModal from './components/AddDeviceModal';
 import AddUserModal from './components/AddUserModal';
 import AssignUserModal from './components/AssignUserModal';
 import EditDeviceModal from './components/EditDeviceModal';
 import EditUserModal from './components/EditUserModal';
+import SetupModal from './components/SetupModal';
 import IdentificationView from './components/IdentificationView';
 
 const GOOGLE_SCRIPT_APP_URL = 'https://script.google.com/macros/s/AKfycbywRpgG-YElFth55EkcjLYQgH4bepTf_yMYsVI9X2ktgf9hABt6sxxa-D7Tj2ySf7Q1/exec'.trim();
@@ -19,6 +21,7 @@ const App: React.FC = () => {
   const [devices, setDevices] = useState<Device[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [setups, setSetups] = useState<SetupData[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   
@@ -27,6 +30,7 @@ const App: React.FC = () => {
   const [assigningDevice, setAssigningDevice] = useState<Device | null>(null);
   const [editingDevice, setEditingDevice] = useState<Device | null>(null);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [settingUpDevice, setSettingUpDevice] = useState<Device | null>(null);
   
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -106,12 +110,27 @@ const App: React.FC = () => {
           id: id.startsWith('hist-') ? id : `hist-${id}`,
           deviceId: h.tagid || 'N/A',
           deviceName: h.devicename || 'Không rõ',
-          action: h.action || 'UPDATE', // Lấy giá trị thô từ Sheet
+          action: h.action || 'UPDATE',
           timestamp: h.timestamp ? new Date(h.timestamp).toLocaleString('vi-VN') : 'Không rõ',
           performer: h.performer || 'Hệ thống',
           target: h.target || ''
         };
       }).reverse());
+
+      setSetups((data.setup || []).map((s: any) => ({
+        id: s.id,
+        tagId: s.tagid,
+        win: !!s.win,
+        unikey: !!s.unikey,
+        printer: !!s.printer,
+        snmp: !!s.snmp,
+        welink: !!s.welink,
+        welinkMeeting: !!s.welinkmeeting,
+        codeFormat: s.codeformat,
+        qrFormat: s.qrformat,
+        lastUpdated: s.lastupdated
+      })));
+
     } catch (err: any) {
       setError({ message: "Lỗi kết nối", details: err.message, isNetworkError: true });
     } finally {
@@ -143,6 +162,7 @@ const App: React.FC = () => {
         setEditingDevice(null);
         setEditingUser(null);
         setAssigningDevice(null);
+        setSettingUpDevice(null);
       }, 2000);
     } catch (err: any) {
       setError({ message: "Lỗi cập nhật", details: err.message });
@@ -168,9 +188,28 @@ const App: React.FC = () => {
     }
   };
 
-  const handleAddUser = (newUser: any) => {
+  const handleAction = (deviceId: string, action: 'ASSIGN' | 'RETURN') => {
     if (!isManagement) return;
-    sendPostRequest({ ...newUser, action: 'ADD_USER', timestamp: new Date().toISOString(), performedBy: currentUser?.name });
+    const device = devices.find(d => d.id === deviceId);
+    if (!device) return;
+    
+    if (action === 'ASSIGN') {
+      if (device.status !== 'AVAILABLE') {
+        alert("Thiết bị này không sẵn sàng để cấp phát.");
+        return;
+      }
+      setAssigningDevice(device);
+    } else if (action === 'RETURN') {
+      if (device.status !== 'ASSIGNED') return;
+      if (window.confirm(`Thu hồi ${device.name}?`)) {
+        sendPostRequest({ action: 'RETURN_DEVICE', tagId: device.tagId, timestamp: new Date().toISOString(), performedBy: currentUser?.name });
+      }
+    }
+  };
+
+  const handleSaveSetup = (setupData: any) => {
+    if (!isManagement) return;
+    sendPostRequest({ ...setupData, action: 'SAVE_SETUP', timestamp: new Date().toISOString(), performedBy: currentUser?.name });
   };
 
   const handleEditUser = (updatedUser: User) => {
@@ -189,25 +228,6 @@ const App: React.FC = () => {
         timestamp: new Date().toISOString(), 
         performedBy: currentUser?.name 
       });
-    }
-  };
-
-  const handleAction = (deviceId: string, action: 'ASSIGN' | 'RETURN') => {
-    if (!isManagement) return;
-    const device = devices.find(d => d.id === deviceId);
-    if (!device) return;
-    
-    if (action === 'ASSIGN') {
-      if (device.status !== 'AVAILABLE') {
-        alert("Thiết bị này không sẵn sàng để cấp phát.");
-        return;
-      }
-      setAssigningDevice(device);
-    } else if (action === 'RETURN') {
-      if (device.status !== 'ASSIGNED') return;
-      if (window.confirm(`Thu hồi ${device.name}?`)) {
-        sendPostRequest({ action: 'RETURN_DEVICE', tagId: device.tagId, timestamp: new Date().toISOString(), performedBy: currentUser?.name });
-      }
     }
   };
 
@@ -240,9 +260,13 @@ const App: React.FC = () => {
       </header>
 
       <main className="flex-1 overflow-y-auto px-4 pt-6 pb-12">
-        {activeTab === 'dashboard' && <DashboardView devices={visibleDevices} history={visibleHistory} onViewAll={() => setActiveTab('devices')} onAction={handleAction} onEdit={setEditingDevice} onDelete={handleDeleteDevice} isAdmin={isAdmin} isManagement={isManagement} onSearch={(v) => { setSearchTerm(v); setActiveTab('devices'); }} />}
-        {activeTab === 'devices' && <DevicesView devices={visibleDevices} onAction={handleAction} onEdit={setEditingDevice} onDelete={handleDeleteDevice} isAdmin={isAdmin} isManagement={isManagement} searchTerm={searchTerm} setSearchTerm={setSearchTerm} />}
+        {activeTab === 'dashboard' && <DashboardView devices={visibleDevices} history={visibleHistory} onViewAll={() => setActiveTab('devices')} onAction={handleAction} onEdit={setEditingDevice} onDelete={handleDeleteDevice} onSetup={setSettingUpDevice} isAdmin={isAdmin} isManagement={isManagement} onSearch={(v) => { setSearchTerm(v); setActiveTab('devices'); }} />}
+        {activeTab === 'devices' && <DevicesView devices={visibleDevices} onAction={handleAction} onEdit={setEditingDevice} onDelete={handleDeleteDevice} onSetup={setSettingUpDevice} isAdmin={isAdmin} isManagement={isManagement} searchTerm={searchTerm} setSearchTerm={setSearchTerm} />}
         {activeTab === 'users' && <UsersView users={users} isAdmin={isAdmin} isManagement={isManagement} onDelete={handleDeleteUser} onEditUser={setEditingUser} />}
+        {activeTab === 'setup' && isAdmin && <SetupView setups={setups} onEdit={(tagId) => {
+          const device = devices.find(d => d.tagId === tagId);
+          if (device) setSettingUpDevice(device);
+        }} />}
         {activeTab === 'settings' && (
           <div className="flex flex-col items-center justify-center pt-10 space-y-6">
             <div className="bg-white p-8 rounded-[40px] border border-slate-100 shadow-xl w-full text-center">
@@ -265,12 +289,19 @@ const App: React.FC = () => {
         </div>
       )}
 
-      <Navigation activeTab={activeTab} setActiveTab={setActiveTab} />
+      <Navigation activeTab={activeTab} setActiveTab={setActiveTab} isAdmin={isAdmin} />
       {isAddDeviceOpen && <AddDeviceModal existingTagIds={existingTagIds} onClose={() => setIsAddDeviceOpen(false)} onSubmit={handleAddDevice} isSaving={isSaving} />}
-      {isAddUserOpen && <AddUserModal onClose={() => setIsAddUserOpen(false)} onSubmit={handleAddUser} isSaving={isSaving} />}
+      {isAddUserOpen && <AddUserModal onClose={() => setIsAddUserOpen(false)} onSubmit={(u) => sendPostRequest({ ...u, action: 'ADD_USER', timestamp: new Date().toISOString(), performedBy: currentUser?.name })} isSaving={isSaving} />}
       {assigningDevice && <AssignUserModal users={users} onClose={() => setAssigningDevice(null)} onSubmit={(u) => sendPostRequest({ action: 'ASSIGN_DEVICE', tagId: assigningDevice.tagId, userName: u.name, timestamp: new Date().toISOString(), performedBy: currentUser?.name })} isSaving={isSaving} />}
       {editingDevice && <EditDeviceModal device={editingDevice} onClose={() => setEditingDevice(null)} onSubmit={handleEditDevice} isSaving={isSaving} />}
       {editingUser && <EditUserModal user={editingUser} onClose={() => setEditingUser(null)} onSubmit={handleEditUser} isSaving={isSaving} />}
+      {settingUpDevice && <SetupModal 
+        device={settingUpDevice} 
+        existingSetup={setups.find(s => s.tagId === settingUpDevice.tagId)} 
+        onClose={() => setSettingUpDevice(null)} 
+        onSubmit={handleSaveSetup} 
+        isSaving={isSaving} 
+      />}
     </div>
   );
 };
