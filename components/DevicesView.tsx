@@ -11,11 +11,12 @@ interface DevicesViewProps {
   onSetup: (device: Device) => void;
   isAdmin: boolean;
   isManagement: boolean;
+  setupTagIds: Set<string>;
   searchTerm: string;
   setSearchTerm: (val: string) => void;
 }
 
-const DevicesView: React.FC<DevicesViewProps> = ({ devices, onAction, onEdit, onDelete, onSetup, isAdmin, isManagement, searchTerm, setSearchTerm }) => {
+const DevicesView: React.FC<DevicesViewProps> = ({ devices, onAction, onEdit, onDelete, onSetup, isAdmin, isManagement, setupTagIds, searchTerm, setSearchTerm }) => {
   const [categoryFilter, setCategoryFilter] = useState<string>('All');
   const [statusFilter, setStatusFilter] = useState<string>('All');
 
@@ -123,7 +124,17 @@ const DevicesView: React.FC<DevicesViewProps> = ({ devices, onAction, onEdit, on
       {filteredDevices.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredDevices.map(device => (
-            <DeviceCard key={device.id} device={device} onAction={onAction} onEdit={onEdit} onDelete={onDelete} onSetup={onSetup} isAdmin={isAdmin} isManagement={isManagement} />
+            <DeviceCard 
+              key={device.id} 
+              device={device} 
+              onAction={onAction} 
+              onEdit={onEdit} 
+              onDelete={onDelete} 
+              onSetup={onSetup} 
+              isAdmin={isAdmin} 
+              isManagement={isManagement} 
+              hasSetup={setupTagIds.has(device.tagId)}
+            />
           ))}
         </div>
       ) : (
