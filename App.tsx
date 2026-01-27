@@ -41,6 +41,9 @@ const App: React.FC = () => {
   const isManagement = isAdmin || isOperation;
 
   const existingTagIds = useMemo(() => devices.map(d => d.tagId), [devices]);
+  
+  // Danh sách các tagId đã được thiết lập thông tin setup
+  const setupTagIds = useMemo(() => new Set(setups.map(s => s.tagId)), [setups]);
 
   const visibleDevices = useMemo(() => {
     if (!currentUser) return [];
@@ -208,7 +211,7 @@ const App: React.FC = () => {
   };
 
   const handleSaveSetup = (setupData: any) => {
-    if (!isManagement) return;
+    if (!isAdmin) return;
     sendPostRequest({ ...setupData, action: 'SAVE_SETUP', timestamp: new Date().toISOString(), performedBy: currentUser?.name });
   };
 
@@ -260,8 +263,8 @@ const App: React.FC = () => {
       </header>
 
       <main className="flex-1 overflow-y-auto px-4 pt-6 pb-12">
-        {activeTab === 'dashboard' && <DashboardView devices={visibleDevices} history={visibleHistory} onViewAll={() => setActiveTab('devices')} onAction={handleAction} onEdit={setEditingDevice} onDelete={handleDeleteDevice} onSetup={setSettingUpDevice} isAdmin={isAdmin} isManagement={isManagement} onSearch={(v) => { setSearchTerm(v); setActiveTab('devices'); }} />}
-        {activeTab === 'devices' && <DevicesView devices={visibleDevices} onAction={handleAction} onEdit={setEditingDevice} onDelete={handleDeleteDevice} onSetup={setSettingUpDevice} isAdmin={isAdmin} isManagement={isManagement} searchTerm={searchTerm} setSearchTerm={setSearchTerm} />}
+        {activeTab === 'dashboard' && <DashboardView devices={visibleDevices} history={visibleHistory} onViewAll={() => setActiveTab('devices')} onAction={handleAction} onEdit={setEditingDevice} onDelete={handleDeleteDevice} onSetup={setSettingUpDevice} isAdmin={isAdmin} isManagement={isManagement} setupTagIds={setupTagIds} onSearch={(v) => { setSearchTerm(v); setActiveTab('devices'); }} />}
+        {activeTab === 'devices' && <DevicesView devices={visibleDevices} onAction={handleAction} onEdit={setEditingDevice} onDelete={handleDeleteDevice} onSetup={setSettingUpDevice} isAdmin={isAdmin} isManagement={isManagement} setupTagIds={setupTagIds} searchTerm={searchTerm} setSearchTerm={setSearchTerm} />}
         {activeTab === 'users' && <UsersView users={users} isAdmin={isAdmin} isManagement={isManagement} onDelete={handleDeleteUser} onEditUser={setEditingUser} />}
         {activeTab === 'setup' && isAdmin && <SetupView setups={setups} onEdit={(tagId) => {
           const device = devices.find(d => d.tagId === tagId);
