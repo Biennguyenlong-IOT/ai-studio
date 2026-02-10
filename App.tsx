@@ -13,6 +13,7 @@ import EditDeviceModal from './components/EditDeviceModal';
 import EditUserModal from './components/EditUserModal';
 import SetupModal from './components/SetupModal';
 import IdentificationView from './components/IdentificationView';
+import ConfirmModal from './components/ConfirmModal';
 
 const GOOGLE_SCRIPT_APP_URL = 'https://script.google.com/macros/s/AKfycbywRpgG-YElFth55EkcjLYQgH4bepTf_yMYsVI9X2ktgf9hABt6sxxa-D7Tj2ySf7Q1/exec'.trim();
 
@@ -32,6 +33,22 @@ const App: React.FC = () => {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [settingUpDevice, setSettingUpDevice] = useState<Device | null>(null);
   
+  // Custom Confirm Dialog State
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    type: 'danger' | 'primary' | 'warning';
+    confirmLabel?: string;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+    type: 'primary'
+  });
+
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<{ message: string; details?: string; isNetworkError?: boolean } | null>(null);
@@ -41,8 +58,6 @@ const App: React.FC = () => {
   const isManagement = isAdmin || isOperation;
 
   const existingTagIds = useMemo(() => devices.map(d => d.tagId), [devices]);
-  
-  // Danh sách các tagId đã được thiết lập thông tin setup
   const setupTagIds = useMemo(() => new Set(setups.map(s => s.tagId)), [setups]);
 
   const visibleDevices = useMemo(() => {
@@ -79,46 +94,37 @@ const App: React.FC = () => {
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
 
-      setDevices((data.devices || []).map((d: any, index: number) => {
-        const id = d.id || `dev-${d.tagid || index}`;
-        return {
-          id: id.startsWith('dev-') ? id : `dev-${id}`,
-          tagId: d.tagid || 'N/A',
-          name: d.name || 'Không tên',
-          type: d.type || 'Khác',
-          location: d.location || 'Chưa rõ',
-          configuration: d.configuration || '',
-          accessory: d.accessory || '',
-          note: d.note || '',
-          status: (d.status?.toString().toUpperCase() as AssetStatus) || 'AVAILABLE',
-          assignedTo: d.assignedto || undefined,
-          lastUpdated: d.lastupdated || new Date().toISOString()
-        };
-      }));
+      setDevices((data.devices || []).map((d: any, index: number) => ({
+        id: d.id || `dev-${d.tagid || index}`,
+        tagId: d.tagid || 'N/A',
+        name: d.name || 'Không tên',
+        type: d.type || 'Khác',
+        location: d.location || 'Chưa rõ',
+        configuration: d.configuration || '',
+        accessory: d.accessory || '',
+        note: d.note || '',
+        status: (d.status?.toString().toUpperCase() as AssetStatus) || 'AVAILABLE',
+        assignedTo: d.assignedto || undefined,
+        lastUpdated: d.lastupdated || new Date().toISOString()
+      })));
 
-      setUsers((data.users || []).map((u: any, index: number) => {
-        const id = u.id || `user-${u.employeeid || index}`;
-        return {
-          id: id.startsWith('user-') ? id : `user-${id}`,
-          name: u.name || 'Unknown User',
-          employeeId: u.employeeid || 'N/A',
-          role: (u.role?.toString().toUpperCase() as any) || 'STAFF',
-          avatarUrl: u.avatarurl || undefined
-        };
-      }));
+      setUsers((data.users || []).map((u: any, index: number) => ({
+        id: u.id || `user-${u.employeeid || index}`,
+        name: u.name || 'Unknown User',
+        employeeId: u.employeeid || 'N/A',
+        role: (u.role?.toString().toUpperCase() as any) || 'STAFF',
+        avatarUrl: u.avatarurl || undefined
+      })));
 
-      setHistory((data.history || []).map((h: any, index: number) => {
-        const id = h.id || `hist-${index}`;
-        return {
-          id: id.startsWith('hist-') ? id : `hist-${id}`,
-          deviceId: h.tagid || 'N/A',
-          deviceName: h.devicename || 'Không rõ',
-          action: h.action || 'UPDATE',
-          timestamp: h.timestamp ? new Date(h.timestamp).toLocaleString('vi-VN') : 'Không rõ',
-          performer: h.performer || 'Hệ thống',
-          target: h.target || ''
-        };
-      }).reverse());
+      setHistory((data.history || []).map((h: any, index: number) => ({
+        id: h.id || `hist-${index}`,
+        deviceId: h.tagid || 'N/A',
+        deviceName: h.devicename || 'Không rõ',
+        action: h.action || 'UPDATE',
+        timestamp: h.timestamp ? new Date(h.timestamp).toLocaleString('vi-VN') : 'Không rõ',
+        performer: h.performer || 'Hệ thống',
+        target: h.target || ''
+      })).reverse());
 
       setSetups((data.setup || []).map((s: any) => ({
         id: s.id,
@@ -143,12 +149,7 @@ const App: React.FC = () => {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  const handleIdentify = (user: User) => {
-    setCurrentUser(user);
-    setActiveTab('dashboard');
-  };
-
-  const handleLogout = () => setCurrentUser(null);
+  const closeConfirm = () => setConfirmDialog(prev => ({ ...prev, isOpen: false }));
 
   const sendPostRequest = async (payload: any) => {
     setIsSaving(true);
@@ -166,6 +167,7 @@ const App: React.FC = () => {
         setEditingUser(null);
         setAssigningDevice(null);
         setSettingUpDevice(null);
+        closeConfirm();
       }, 2000);
     } catch (err: any) {
       setError({ message: "Lỗi cập nhật", details: err.message });
@@ -186,9 +188,16 @@ const App: React.FC = () => {
   const handleDeleteDevice = (id: string) => {
     if (!isAdmin) return;
     const device = devices.find(d => d.id === id);
-    if (device && window.confirm(`Xóa thiết bị ${device.name}?`)) {
-      sendPostRequest({ action: 'DELETE_DEVICE', tagId: device.tagId, timestamp: new Date().toISOString(), performedBy: currentUser?.name });
-    }
+    if (!device) return;
+    
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Xóa thiết bị?',
+      message: `Bạn có chắc chắn muốn xóa thiết bị "${device.name}" (${device.tagId}) khỏi hệ thống không? Hành động này không thể hoàn tác.`,
+      type: 'danger',
+      confirmLabel: 'Xóa vĩnh viễn',
+      onConfirm: () => sendPostRequest({ action: 'DELETE_DEVICE', tagId: device.tagId, timestamp: new Date().toISOString(), performedBy: currentUser?.name })
+    });
   };
 
   const handleAction = (deviceId: string, action: 'ASSIGN' | 'RETURN') => {
@@ -198,15 +207,28 @@ const App: React.FC = () => {
     
     if (action === 'ASSIGN') {
       if (device.status !== 'AVAILABLE') {
-        alert("Thiết bị này không sẵn sàng để cấp phát.");
+        setConfirmDialog({
+          isOpen: true,
+          title: 'Không thể cấp phát',
+          message: 'Thiết bị này hiện không ở trạng thái "Sẵn sàng". Vui lòng kiểm tra lại.',
+          type: 'warning',
+          confirmLabel: 'Đã hiểu',
+          onConfirm: closeConfirm
+        });
         return;
       }
       setAssigningDevice(device);
     } else if (action === 'RETURN') {
       if (device.status !== 'ASSIGNED') return;
-      if (window.confirm(`Thu hồi ${device.name}?`)) {
-        sendPostRequest({ action: 'RETURN_DEVICE', tagId: device.tagId, timestamp: new Date().toISOString(), performedBy: currentUser?.name });
-      }
+      
+      setConfirmDialog({
+        isOpen: true,
+        title: 'Xác nhận thu hồi',
+        message: `Bạn muốn thu hồi thiết bị "${device.name}" từ người dùng hiện tại về kho?`,
+        type: 'primary',
+        confirmLabel: 'Thu hồi ngay',
+        onConfirm: () => sendPostRequest({ action: 'RETURN_DEVICE', tagId: device.tagId, timestamp: new Date().toISOString(), performedBy: currentUser?.name })
+      });
     }
   };
 
@@ -215,24 +237,33 @@ const App: React.FC = () => {
     sendPostRequest({ ...setupData, action: 'SAVE_SETUP', timestamp: new Date().toISOString(), performedBy: currentUser?.name });
   };
 
-  const handleEditUser = (updatedUser: User) => {
-    if (!isAdmin) return;
-    sendPostRequest({ ...updatedUser, action: 'EDIT_USER', timestamp: new Date().toISOString(), performedBy: currentUser?.name });
-  };
-
   const handleDeleteUser = (id: string) => {
     if (!isAdmin) return;
     const user = users.find(u => u.id === id);
-    if (user && window.confirm(`Xóa nhân sự ${user.name}?`)) {
-      sendPostRequest({ 
+    if (!user) return;
+    
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Xóa nhân sự?',
+      message: `Bạn muốn xóa nhân sự "${user.name}" (${user.employeeId})? Dữ liệu lịch sử sẽ vẫn được giữ lại.`,
+      type: 'danger',
+      confirmLabel: 'Xác nhận xóa',
+      onConfirm: () => sendPostRequest({ 
         action: 'DELETE_USER', 
         employeeId: user.employeeId, 
         name: user.name, 
         timestamp: new Date().toISOString(), 
         performedBy: currentUser?.name 
-      });
-    }
+      })
+    });
   };
+
+  const handleIdentify = (user: User) => {
+    setCurrentUser(user);
+    setActiveTab('dashboard');
+  };
+
+  const handleLogout = () => setCurrentUser(null);
 
   const handleFabClick = () => {
     if (activeTab === 'users' && isManagement) setIsAddUserOpen(true);
@@ -293,11 +324,13 @@ const App: React.FC = () => {
       )}
 
       <Navigation activeTab={activeTab} setActiveTab={setActiveTab} isAdmin={isAdmin} />
+      
+      {/* Modals */}
       {isAddDeviceOpen && <AddDeviceModal existingTagIds={existingTagIds} onClose={() => setIsAddDeviceOpen(false)} onSubmit={handleAddDevice} isSaving={isSaving} />}
       {isAddUserOpen && <AddUserModal onClose={() => setIsAddUserOpen(false)} onSubmit={(u) => sendPostRequest({ ...u, action: 'ADD_USER', timestamp: new Date().toISOString(), performedBy: currentUser?.name })} isSaving={isSaving} />}
       {assigningDevice && <AssignUserModal users={users} onClose={() => setAssigningDevice(null)} onSubmit={(u) => sendPostRequest({ action: 'ASSIGN_DEVICE', tagId: assigningDevice.tagId, userName: u.name, timestamp: new Date().toISOString(), performedBy: currentUser?.name })} isSaving={isSaving} />}
       {editingDevice && <EditDeviceModal device={editingDevice} onClose={() => setEditingDevice(null)} onSubmit={handleEditDevice} isSaving={isSaving} />}
-      {editingUser && <EditUserModal user={editingUser} onClose={() => setEditingUser(null)} onSubmit={handleEditUser} isSaving={isSaving} />}
+      {editingUser && <EditUserModal user={editingUser} onClose={() => setEditingUser(null)} onSubmit={(u) => sendPostRequest({ ...u, action: 'EDIT_USER', timestamp: new Date().toISOString(), performedBy: currentUser?.name })} isSaving={isSaving} />}
       {settingUpDevice && <SetupModal 
         device={settingUpDevice} 
         existingSetup={setups.find(s => s.tagId === settingUpDevice.tagId)} 
@@ -305,6 +338,18 @@ const App: React.FC = () => {
         onSubmit={handleSaveSetup} 
         isSaving={isSaving} 
       />}
+
+      {/* Confirmation Dialog */}
+      <ConfirmModal 
+        isOpen={confirmDialog.isOpen}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        onConfirm={confirmDialog.onConfirm}
+        onCancel={closeConfirm}
+        type={confirmDialog.type}
+        confirmLabel={confirmDialog.confirmLabel}
+        isSaving={isSaving}
+      />
     </div>
   );
 };
