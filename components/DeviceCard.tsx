@@ -85,6 +85,13 @@ const DeviceCard: React.FC<DeviceCardProps> = ({ device, onAction, onEdit, onDel
           </div>
         </div>
 
+        {isAvailable && !hasSetup && (
+          <div className="mt-3 px-3 py-2 bg-orange-50 rounded-xl border border-orange-100 flex items-center gap-2 animate-pulse">
+            <span className="material-symbols-outlined text-[16px] text-orange-500">pending_actions</span>
+            <span className="text-[10px] font-black text-orange-700 uppercase tracking-tight">Cần thiết lập lại phần mềm</span>
+          </div>
+        )}
+
         {isExpanded && (
           <div className="mt-4 pt-4 border-t border-slate-50 space-y-2 animate-fadeIn">
             <p className="text-xs text-slate-500"><b>Phụ kiện:</b> {device.accessory || 'Không'}</p>
@@ -93,12 +100,6 @@ const DeviceCard: React.FC<DeviceCardProps> = ({ device, onAction, onEdit, onDel
               <span className="material-symbols-outlined text-[14px] text-slate-400">update</span>
               <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Cập nhật: {formatDateTime(device.lastUpdated)}</p>
             </div>
-            {isAvailable && !hasSetup && (
-               <div className="flex items-center gap-1 text-[10px] font-bold text-orange-500 bg-orange-50 px-2 py-1 rounded-lg border border-orange-100">
-                  <span className="material-symbols-outlined text-[14px]">info</span>
-                  CẦN THIẾT LẬP PHẦN MỀM TRƯỚC KHI CẤP PHÁT
-               </div>
-            )}
           </div>
         )}
       </div>
@@ -111,9 +112,10 @@ const DeviceCard: React.FC<DeviceCardProps> = ({ device, onAction, onEdit, onDel
             </button>
           )}
 
-          {/* CHỈ ADMIN mới thấy nút Setup */}
           {isAdmin && isAvailable && (
-            <button onClick={() => onSetup(device)} className="flex-1 min-w-[70px] bg-white border border-slate-200 py-2 rounded-lg text-xs font-bold text-slate-600 flex items-center justify-center gap-1 hover:bg-slate-50">
+            <button onClick={() => onSetup(device)} className={`flex-1 min-w-[70px] py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition-all ${
+              !hasSetup ? 'bg-orange-500 text-white shadow-lg shadow-orange-200' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+            }`}>
               <span className="material-symbols-outlined text-[16px]">settings_suggest</span> Setup
             </button>
           )}
@@ -127,8 +129,8 @@ const DeviceCard: React.FC<DeviceCardProps> = ({ device, onAction, onEdit, onDel
               <span className="material-symbols-outlined text-[16px]">person_add</span> Cấp phát
             </button>
           ) : isAvailable ? (
-             <div className="flex-1 min-w-[70px] bg-slate-100 border border-slate-200 py-2 rounded-lg text-[10px] font-bold text-slate-400 flex items-center justify-center gap-1 cursor-help" title="Cần hoàn tất Setup trước">
-              <span className="material-symbols-outlined text-[16px]">pending_actions</span> Chờ Setup
+             <div className="flex-1 min-w-[70px] bg-slate-100 border border-slate-200 py-2 rounded-lg text-[10px] font-bold text-slate-400 flex items-center justify-center gap-1 cursor-help" title="Cần hoàn tất Setup trước khi cấp phát cho nhân viên khác">
+              <span className="material-symbols-outlined text-[16px]">lock_clock</span> Chờ Setup
             </div>
           ) : (
             <div className="flex-1 min-w-[70px] bg-slate-100 border border-slate-200 py-2 rounded-lg text-xs font-bold text-slate-400 flex items-center justify-center gap-1 cursor-not-allowed">
