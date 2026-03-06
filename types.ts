@@ -49,4 +49,18 @@ export interface SetupData {
   lastUpdated: string;
 }
 
+export interface AssignmentRecord {
+  id: string;
+  tagId: string;
+  deviceName: string;
+  userName: string;
+  employeeId: string;
+  date: string;
+  accessories: string[];
+  otherAccessory?: string;
+  notes?: string;
+  timestamp: string;
+  performer: string;
+}
+
 export type TabType = 'dashboard' | 'devices' | 'users' | 'setup' | 'settings';

@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { TabType, Device, HistoryEntry, AssetStatus, User, SetupData } from './types';
+import { TabType, Device, HistoryEntry, AssetStatus, User, SetupData, AssignmentRecord } from './types';
 import DashboardView from './components/DashboardView';
 import DevicesView from './components/DevicesView';
 import UsersView from './components/UsersView';
@@ -23,6 +23,7 @@ const App: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [setups, setSetups] = useState<SetupData[]>([]);
+  const [assignments, setAssignments] = useState<AssignmentRecord[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   
@@ -140,6 +141,20 @@ const App: React.FC = () => {
         lastUpdated: s.lastupdated
       })));
 
+      setAssignments((data.assignments || []).map((a: any) => ({
+        id: a.id,
+        tagId: a.tagid,
+        deviceName: a.devicename,
+        userName: a.username,
+        employeeId: a.employeeid,
+        date: a.date,
+        accessories: a.accessories ? a.accessories.split(', ') : [],
+        otherAccessory: a.otheraccessory,
+        notes: a.notes,
+        timestamp: a.timestamp,
+        performer: a.performer
+      })).reverse());
+
     } catch (err: any) {
       setError({ message: "Lỗi kết nối", details: err.message, isNetworkError: true });
     } finally {
@@ -232,6 +247,29 @@ const App: React.FC = () => {
     }
   };
 
+  const handleAssignDevice = (data: { 
+    user: User; 
+    date: string; 
+    accessories: string[]; 
+    otherAccessory: string; 
+    notes: string 
+  }) => {
+    if (!isManagement || !assigningDevice) return;
+    sendPostRequest({ 
+      action: 'ASSIGN_DEVICE', 
+      tagId: assigningDevice.tagId, 
+      deviceName: assigningDevice.name,
+      userName: data.user.name, 
+      employeeId: data.user.employeeId,
+      date: data.date,
+      accessories: data.accessories.join(', '),
+      otherAccessory: data.otherAccessory,
+      notes: data.notes,
+      timestamp: new Date().toISOString(), 
+      performedBy: currentUser?.name 
+    });
+  };
+
   const handleSaveSetup = (setupData: any) => {
     if (!isAdmin) return;
     sendPostRequest({ ...setupData, action: 'SAVE_SETUP', timestamp: new Date().toISOString(), performedBy: currentUser?.name });
@@ -294,7 +332,22 @@ const App: React.FC = () => {
       </header>
 
       <main className="flex-1 overflow-y-auto px-4 pt-6 pb-12">
-        {activeTab === 'dashboard' && <DashboardView devices={visibleDevices} history={visibleHistory} onViewAll={() => setActiveTab('devices')} onAction={handleAction} onEdit={setEditingDevice} onDelete={handleDeleteDevice} onSetup={setSettingUpDevice} isAdmin={isAdmin} isManagement={isManagement} setupTagIds={setupTagIds} onSearch={(v) => { setSearchTerm(v); setActiveTab('devices'); }} />}
+        {activeTab === 'dashboard' && (
+          <DashboardView 
+            devices={visibleDevices} 
+            history={visibleHistory} 
+            assignments={assignments}
+            onViewAll={() => setActiveTab('devices')} 
+            onAction={handleAction} 
+            onEdit={setEditingDevice} 
+            onDelete={handleDeleteDevice} 
+            onSetup={setSettingUpDevice} 
+            isAdmin={isAdmin} 
+            isManagement={isManagement} 
+            setupTagIds={setupTagIds} 
+            onSearch={(v) => { setSearchTerm(v); setActiveTab('devices'); }} 
+          />
+        )}
         {activeTab === 'devices' && <DevicesView devices={visibleDevices} onAction={handleAction} onEdit={setEditingDevice} onDelete={handleDeleteDevice} onSetup={setSettingUpDevice} isAdmin={isAdmin} isManagement={isManagement} setupTagIds={setupTagIds} searchTerm={searchTerm} setSearchTerm={setSearchTerm} />}
         {activeTab === 'users' && <UsersView users={users} isAdmin={isAdmin} isManagement={isManagement} onDelete={handleDeleteUser} onEditUser={setEditingUser} />}
         {activeTab === 'setup' && isAdmin && <SetupView setups={setups} onEdit={(tagId) => {
@@ -328,7 +381,15 @@ const App: React.FC = () => {
       {/* Modals */}
       {isAddDeviceOpen && <AddDeviceModal existingTagIds={existingTagIds} onClose={() => setIsAddDeviceOpen(false)} onSubmit={handleAddDevice} isSaving={isSaving} />}
       {isAddUserOpen && <AddUserModal onClose={() => setIsAddUserOpen(false)} onSubmit={(u) => sendPostRequest({ ...u, action: 'ADD_USER', timestamp: new Date().toISOString(), performedBy: currentUser?.name })} isSaving={isSaving} />}
-      {assigningDevice && <AssignUserModal users={users} onClose={() => setAssigningDevice(null)} onSubmit={(u) => sendPostRequest({ action: 'ASSIGN_DEVICE', tagId: assigningDevice.tagId, userName: u.name, timestamp: new Date().toISOString(), performedBy: currentUser?.name })} isSaving={isSaving} />}
+      {assigningDevice && (
+        <AssignUserModal 
+          device={assigningDevice}
+          users={users} 
+          onClose={() => setAssigningDevice(null)} 
+          onSubmit={handleAssignDevice} 
+          isSaving={isSaving} 
+        />
+      )}
       {editingDevice && <EditDeviceModal device={editingDevice} onClose={() => setEditingDevice(null)} onSubmit={handleEditDevice} isSaving={isSaving} />}
       {editingUser && <EditUserModal user={editingUser} onClose={() => setEditingUser(null)} onSubmit={(u) => sendPostRequest({ ...u, action: 'EDIT_USER', timestamp: new Date().toISOString(), performedBy: currentUser?.name })} isSaving={isSaving} />}
       {settingUpDevice && <SetupModal 

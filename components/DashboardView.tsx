@@ -1,12 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
-import { Device, HistoryEntry, AssetStatus } from '../types';
+import { Device, HistoryEntry, AssetStatus, AssignmentRecord } from '../types';
 import DeviceCard from './DeviceCard';
 import TimelineItem from './TimelineItem';
 
 interface DashboardViewProps {
   devices: Device[];
   history: HistoryEntry[];
+  assignments: AssignmentRecord[];
   onViewAll: () => void;
   onAction: (id: string, action: 'ASSIGN' | 'RETURN') => void;
   onEdit: (device: Device) => void;
@@ -18,10 +19,11 @@ interface DashboardViewProps {
   onSearch: (val: string) => void;
 }
 
-const DashboardView: React.FC<DashboardViewProps> = ({ devices, history, onViewAll, onAction, onEdit, onDelete, onSetup, isAdmin, isManagement, setupTagIds, onSearch }) => {
+const DashboardView: React.FC<DashboardViewProps> = ({ devices, history, assignments, onViewAll, onAction, onEdit, onDelete, onSetup, isAdmin, isManagement, setupTagIds, onSearch }) => {
   const [localSearch, setLocalSearch] = useState('');
   const [greeting, setGreeting] = useState('');
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [activeSubTab, setActiveSubTab] = useState<'history' | 'assignments'>('history');
 
   useEffect(() => {
     const hour = currentTime.getHours();
@@ -134,9 +136,72 @@ const DashboardView: React.FC<DashboardViewProps> = ({ devices, history, onViewA
           </div>
         </section>
         <section>
-          <h2 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-4">Nhật ký mới nhất</h2>
+          <div className="flex items-center justify-between mb-4 px-1">
+            <div className="flex gap-4">
+              <button 
+                onClick={() => setActiveSubTab('history')}
+                className={`text-[11px] font-bold uppercase tracking-widest pb-1 border-b-2 transition-all ${activeSubTab === 'history' ? 'text-primary border-primary' : 'text-slate-400 border-transparent'}`}
+              >
+                Nhật ký hệ thống
+              </button>
+              <button 
+                onClick={() => setActiveSubTab('assignments')}
+                className={`text-[11px] font-bold uppercase tracking-widest pb-1 border-b-2 transition-all ${activeSubTab === 'assignments' ? 'text-primary border-primary' : 'text-slate-400 border-transparent'}`}
+              >
+                Lịch sử cấp phát
+              </button>
+            </div>
+          </div>
+          
           <div className="space-y-6">
-            {history.slice(0, 5).map(entry => <TimelineItem key={entry.id} entry={entry} />)}
+            {activeSubTab === 'history' ? (
+              history.slice(0, 5).map(entry => <TimelineItem key={entry.id} entry={entry} />)
+            ) : (
+              <div className="space-y-4">
+                {assignments.slice(0, 10).map(record => (
+                  <div key={record.id} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-subtle">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <h4 className="font-bold text-slate-800 text-sm">{record.deviceName}</h4>
+                        <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">{record.tagId}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[10px] font-bold text-primary uppercase tracking-wider">{record.date}</p>
+                        <p className="text-[9px] text-slate-400">{record.timestamp.split('T')[0]}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center">
+                        <span className="material-symbols-outlined text-slate-400 text-[14px]">person</span>
+                      </div>
+                      <span className="text-xs font-bold text-slate-700">{record.userName}</span>
+                      <span className="text-[10px] text-slate-400">({record.employeeId})</span>
+                    </div>
+                    {record.accessories.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mb-2">
+                        {record.accessories.map(acc => (
+                          <span key={acc} className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded-md text-[9px] font-bold uppercase">{acc}</span>
+                        ))}
+                        {record.otherAccessory && (
+                          <span className="px-2 py-0.5 bg-slate-50 text-slate-600 rounded-md text-[9px] font-bold uppercase">{record.otherAccessory}</span>
+                        )}
+                      </div>
+                    )}
+                    {record.notes && (
+                      <p className="text-[10px] text-slate-500 italic bg-slate-50 p-2 rounded-lg border border-slate-100">
+                        "{record.notes}"
+                      </p>
+                    )}
+                  </div>
+                ))}
+                {assignments.length === 0 && (
+                  <div className="text-center py-10 bg-slate-50 rounded-[32px] border border-dashed border-slate-200">
+                    <span className="material-symbols-outlined text-slate-300 text-4xl mb-2">assignment_late</span>
+                    <p className="text-xs text-slate-400 font-medium">Chưa có lịch sử cấp phát nào.</p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </section>
       </div>
