@@ -13,13 +13,14 @@ interface DashboardViewProps {
   onEdit: (device: Device) => void;
   onDelete: (id: string) => void;
   onSetup: (device: Device) => void;
+  onEditAssignment: (record: AssignmentRecord) => void;
   isAdmin: boolean;
   isManagement: boolean;
   setupTagIds: Set<string>;
   onSearch: (val: string) => void;
 }
 
-const DashboardView: React.FC<DashboardViewProps> = ({ devices, history, assignments, onViewAll, onAction, onEdit, onDelete, onSetup, isAdmin, isManagement, setupTagIds, onSearch }) => {
+const DashboardView: React.FC<DashboardViewProps> = ({ devices, history, assignments, onViewAll, onAction, onEdit, onDelete, onSetup, onEditAssignment, isAdmin, isManagement, setupTagIds, onSearch }) => {
   const [localSearch, setLocalSearch] = useState('');
   const [greeting, setGreeting] = useState('');
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -166,8 +167,49 @@ const DashboardView: React.FC<DashboardViewProps> = ({ devices, history, assignm
                         <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">{record.tagId}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-[10px] font-bold text-primary uppercase tracking-wider">{record.date}</p>
-                        <p className="text-[9px] text-slate-400">{record.timestamp.split('T')[0]}</p>
+                        <div className="flex flex-col items-end">
+                          <span className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter mb-0.5">Ngày cấp phát dự kiến</span>
+                          <div className="flex items-center gap-1.5">
+                            <p className="text-[10px] font-bold text-primary uppercase tracking-wider">
+                              {(() => {
+                                // Xử lý chuỗi ngày (có thể là ISO hoặc YYYY-MM-DD)
+                                const datePart = record.date.split('T')[0];
+                                const parts = datePart.split('-');
+                                if (parts.length === 3) {
+                                  return `${parts[2]}/${parts[1]}/${parts[0]}`;
+                                }
+                                return record.date;
+                              })()}
+                            </p>
+                            {isManagement && (
+                              <button 
+                                onClick={() => onEditAssignment(record)}
+                                className="w-5 h-5 rounded-full bg-slate-50 text-slate-400 hover:bg-primary/10 hover:text-primary flex items-center justify-center transition-all"
+                                title="Chỉnh sửa ngày cấp phát"
+                              >
+                                <span className="material-symbols-outlined text-[12px]">edit</span>
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                        <p className="text-[9px] text-slate-400 mt-1">
+                          {(() => {
+                            try {
+                              const d = new Date(record.timestamp);
+                              return isNaN(d.getTime()) 
+                                ? record.timestamp 
+                                : d.toLocaleString('vi-VN', { 
+                                    hour: '2-digit', 
+                                    minute: '2-digit',
+                                    day: '2-digit', 
+                                    month: '2-digit', 
+                                    year: 'numeric' 
+                                  });
+                            } catch {
+                              return record.timestamp;
+                            }
+                          })()}
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 mb-3">

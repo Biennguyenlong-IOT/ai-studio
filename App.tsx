@@ -12,6 +12,7 @@ import AssignUserModal from './components/AssignUserModal';
 import EditDeviceModal from './components/EditDeviceModal';
 import EditUserModal from './components/EditUserModal';
 import SetupModal from './components/SetupModal';
+import EditAssignmentModal from './components/EditAssignmentModal';
 import IdentificationView from './components/IdentificationView';
 import ConfirmModal from './components/ConfirmModal';
 
@@ -33,6 +34,7 @@ const App: React.FC = () => {
   const [editingDevice, setEditingDevice] = useState<Device | null>(null);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [settingUpDevice, setSettingUpDevice] = useState<Device | null>(null);
+  const [editingAssignment, setEditingAssignment] = useState<AssignmentRecord | null>(null);
   
   // Custom Confirm Dialog State
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -275,6 +277,23 @@ const App: React.FC = () => {
     sendPostRequest({ ...setupData, action: 'SAVE_SETUP', timestamp: new Date().toISOString(), performedBy: currentUser?.name });
   };
 
+  const handleEditAssignment = (id: string, date: string) => {
+    if (!isManagement) return;
+    const assignment = assignments.find(a => a.id === id);
+    if (!assignment) return;
+    sendPostRequest({ 
+      action: 'EDIT_ASSIGNMENT', 
+      id, 
+      date, 
+      tagId: assignment.tagId, 
+      deviceName: assignment.deviceName, 
+      userName: assignment.userName,
+      timestamp: new Date().toISOString(), 
+      performedBy: currentUser?.name 
+    });
+    setEditingAssignment(null);
+  };
+
   const handleDeleteUser = (id: string) => {
     if (!isAdmin) return;
     const user = users.find(u => u.id === id);
@@ -342,6 +361,7 @@ const App: React.FC = () => {
             onEdit={setEditingDevice} 
             onDelete={handleDeleteDevice} 
             onSetup={setSettingUpDevice} 
+            onEditAssignment={setEditingAssignment}
             isAdmin={isAdmin} 
             isManagement={isManagement} 
             setupTagIds={setupTagIds} 
@@ -399,6 +419,14 @@ const App: React.FC = () => {
         onSubmit={handleSaveSetup} 
         isSaving={isSaving} 
       />}
+      {editingAssignment && (
+        <EditAssignmentModal 
+          assignment={editingAssignment} 
+          onClose={() => setEditingAssignment(null)} 
+          onSubmit={handleEditAssignment} 
+          isSaving={isSaving} 
+        />
+      )}
 
       {/* Confirmation Dialog */}
       <ConfirmModal 
