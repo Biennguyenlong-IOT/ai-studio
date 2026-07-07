@@ -400,7 +400,7 @@ const App: React.FC = () => {
       
       {/* Modals */}
       {isAddDeviceOpen && <AddDeviceModal existingTagIds={existingTagIds} onClose={() => setIsAddDeviceOpen(false)} onSubmit={handleAddDevice} isSaving={isSaving} />}
-      {isAddUserOpen && <AddUserModal onClose={() => setIsAddUserOpen(false)} onSubmit={(u) => sendPostRequest({ ...u, action: 'ADD_USER', timestamp: new Date().toISOString(), performedBy: currentUser?.name })} isSaving={isSaving} />}
+      {isAddUserOpen && <AddUserModal existingEmployeeIds={users.map(u => u.employeeId)} onClose={() => setIsAddUserOpen(false)} onSubmit={(u) => sendPostRequest({ ...u, action: 'ADD_USER', timestamp: new Date().toISOString(), performedBy: currentUser?.name })} isSaving={isSaving} />}
       {assigningDevice && (
         <AssignUserModal 
           device={assigningDevice}
