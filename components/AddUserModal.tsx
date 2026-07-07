@@ -3,21 +3,38 @@ import React, { useState } from 'react';
 import { User, UserRole } from '../types';
 
 interface AddUserModalProps {
+  existingEmployeeIds: string[];
   onClose: () => void;
   onSubmit: (user: Omit<User, 'id' | 'avatarUrl'>) => void;
   isSaving?: boolean;
 }
 
-const AddUserModal: React.FC<AddUserModalProps> = ({ onClose, onSubmit, isSaving = false }) => {
+const AddUserModal: React.FC<AddUserModalProps> = ({ existingEmployeeIds, onClose, onSubmit, isSaving = false }) => {
   const [formData, setFormData] = useState({
     name: '',
     employeeId: '',
     role: 'STAFF' as UserRole,
   });
+  const [validationError, setValidationError] = useState<string | null>(null);
+
+  const handleEmployeeIdChange = (val: string) => {
+    setFormData(prev => ({ ...prev, employeeId: val }));
+    if (existingEmployeeIds.some(id => id.trim().toLowerCase() === val.trim().toLowerCase())) {
+      setValidationError('Mã nhân viên này đã tồn tại trên hệ thống!');
+    } else {
+      setValidationError(null);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.employeeId || isSaving) return;
+
+    if (existingEmployeeIds.some(id => id.trim().toLowerCase() === formData.employeeId.trim().toLowerCase())) {
+      setValidationError('Mã nhân viên này đã tồn tại trên hệ thống!');
+      return;
+    }
+
     onSubmit(formData);
   };
 
@@ -53,12 +70,18 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ onClose, onSubmit, isSaving
             <input 
               required
               disabled={isSaving}
-              className="w-full bg-slate-50 border-slate-100 rounded-xl text-sm text-slate-800 focus:ring-primary/20 focus:border-primary py-3 px-4"
+              className={`w-full bg-slate-50 border rounded-xl text-sm text-slate-800 focus:ring-primary/20 focus:border-primary py-3 px-4 transition-all ${validationError ? 'border-red-500 bg-red-50/10 focus:ring-red-200 focus:border-red-500' : 'border-slate-100'}`}
               placeholder="NV-001"
               type="text"
               value={formData.employeeId}
-              onChange={e => setFormData(prev => ({ ...prev, employeeId: e.target.value }))}
+              onChange={e => handleEmployeeIdChange(e.target.value)}
             />
+            {validationError && (
+              <p className="mt-1.5 text-xs text-red-500 font-medium px-1 flex items-center gap-1">
+                <span className="material-symbols-outlined text-[14px]">error</span>
+                {validationError}
+              </p>
+            )}
           </div>
 
           <div>
@@ -77,7 +100,7 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ onClose, onSubmit, isSaving
 
           <div className="flex gap-3 pt-4">
             <button type="button" onClick={onClose} className="flex-1 py-3.5 rounded-xl text-sm font-bold border border-slate-200 text-slate-600">Hủy</button>
-            <button type="submit" disabled={isSaving} className="flex-[2] py-3.5 rounded-xl text-sm font-bold bg-primary text-white flex items-center justify-center gap-2 transition-all active:scale-[0.98]">
+            <button type="submit" disabled={isSaving || !!validationError} className="flex-[2] py-3.5 rounded-xl text-sm font-bold bg-primary text-white flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-50">
               {isSaving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : 'Thêm nhân sự'}
             </button>
           </div>
