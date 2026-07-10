@@ -277,7 +277,7 @@ const App: React.FC = () => {
     sendPostRequest({ ...setupData, action: 'SAVE_SETUP', timestamp: new Date().toISOString(), performedBy: currentUser?.name });
   };
 
-  const handleEditAssignment = (id: string, date: string) => {
+  const handleEditAssignment = (id: string, date: string, accessories: string[], otherAccessory: string, notes: string) => {
     if (!isManagement) return;
     const assignment = assignments.find(a => a.id === id);
     if (!assignment) return;
@@ -285,6 +285,9 @@ const App: React.FC = () => {
       action: 'EDIT_ASSIGNMENT', 
       id, 
       date, 
+      accessories: accessories.join(', '),
+      otherAccessory,
+      notes,
       tagId: assignment.tagId, 
       deviceName: assignment.deviceName, 
       userName: assignment.userName,
