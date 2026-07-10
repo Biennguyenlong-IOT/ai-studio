@@ -111,13 +111,24 @@ const App: React.FC = () => {
         lastUpdated: d.lastupdated || new Date().toISOString()
       })));
 
-      setUsers((data.users || []).map((u: any, index: number) => ({
-        id: u.id || `user-${u.employeeid || index}`,
-        name: u.name || 'Unknown User',
-        employeeId: u.employeeid || 'N/A',
-        role: (u.role?.toString().toUpperCase() as any) || 'STAFF',
-        avatarUrl: u.avatarurl || undefined
-      })));
+      const seenUserIds = new Set<string>();
+      setUsers((data.users || []).map((u: any, index: number) => {
+        const baseId = u.id || `user-${u.employeeid || index}`;
+        let uniqueId = baseId;
+        let suffix = 1;
+        while (seenUserIds.has(uniqueId)) {
+          uniqueId = `${baseId}-${suffix}`;
+          suffix++;
+        }
+        seenUserIds.add(uniqueId);
+        return {
+          id: uniqueId,
+          name: u.name || 'Unknown User',
+          employeeId: u.employeeid || 'N/A',
+          role: (u.role?.toString().toUpperCase() as any) || 'STAFF',
+          avatarUrl: u.avatarurl || undefined
+        };
+      }));
 
       setHistory((data.history || []).map((h: any, index: number) => ({
         id: h.id || `hist-${index}`,
@@ -278,7 +289,7 @@ const App: React.FC = () => {
   };
 
   const handleEditAssignment = (id: string, date: string, accessories: string[], otherAccessory: string, notes: string) => {
-    if (!isManagement) return;
+    if (!isAdmin) return;
     const assignment = assignments.find(a => a.id === id);
     if (!assignment) return;
     sendPostRequest({ 
