@@ -1,71 +1,66 @@
 
-export enum CategoryType {
-  EXPENSE = 'EXPENSE',
-  INCOME = 'INCOME',
-  TRANSFER = 'TRANSFER'
-}
+export type AssetStatus = 'AVAILABLE' | 'ASSIGNED' | 'PENDING' | 'REPAIR';
+export type UserRole = 'ADMIN' | 'OPERATION' | 'STAFF';
 
-export interface Category {
+export interface Device {
   id: string;
+  tagId: string;
   name: string;
-  icon: string;
-  type: CategoryType;
-  color: string;
-  budget?: number;
+  type: string;
+  location: string;
+  configuration: string;
+  accessory?: string;
+  note?: string;
+  status: AssetStatus;
+  assignedTo?: string;
+  lastUpdated: string;
 }
 
-export interface Wallet {
+export interface User {
   id: string;
+  employeeId: string;
   name: string;
-  balance: number;
-  icon: string;
-  color: string;
-  isSavings?: boolean;
-  subType?: 'payment' | 'debit' | 'savings' | 'debt' | 'lending' | 'hui';
-  startDate?: string;
-  interestRate?: number;
-  termMonths?: number;
-
-  // Thuộc tính dành cho Hụi / Họ / Phường
-  huiShareAmount?: number;      // 1./ Số tiền tham gia
-  huiTotalPeriods?: number;     // 2./ Tổng số kỳ
-  huiCompletedPeriods?: number; // 2./ Số kỳ đã đóng/hoàn thành
-  huiDailyQuota?: number;       // 3./ Tiền định mức hằng ngày
-  huiTotalActualPaid?: number;  // 4./ Tổng số tiền đóng thực tế hằng ngày
-  huiIsEnded?: boolean;         // Trạng thái đã ngưng / tất toán hụi
+  role: UserRole;
+  avatarUrl?: string;
 }
 
-export interface FavoriteItem {
+export interface HistoryEntry {
   id: string;
-  name: string;
-  price: number;
-  categoryId: string;
-  icon: string;
-  shopName: string;
-  defaultWalletId: string;
+  deviceId: string;
+  deviceName: string;
+  action: string;
+  timestamp: string;
+  performer: string;
+  target?: string;
+  avatarUrl?: string;
 }
 
-export interface Transaction {
+export interface SetupData {
   id: string;
-  amount: number;
-  categoryId: string;
-  walletId: string;
-  toWalletId?: string; // Ví nhận (dành cho trả nợ/chuyển tiền)
+  tagId: string;
+  win: boolean;
+  unikey: boolean;
+  printer: boolean;
+  snmp: boolean;
+  welink: boolean;
+  welinkMeeting: boolean;
+  codeFormat: string;
+  qrFormat: string;
+  lastUpdated: string;
+}
+
+export interface AssignmentRecord {
+  id: string;
+  tagId: string;
+  deviceName: string;
+  userName: string;
+  employeeId: string;
   date: string;
-  note: string;
-  type: CategoryType;
-  icon?: string;
-  // Metadata cho Sheet
-  categoryName?: string;
-  walletName?: string;
-  toWalletName?: string;
+  accessories: string[];
+  otherAccessory?: string;
+  notes?: string;
+  timestamp: string;
+  performer: string;
 }
 
-export interface AppState {
-  wallets: Wallet[];
-  transactions: Transaction[];
-  categories: Category[];
-  favorites: FavoriteItem[];
-  googleSheetUrl?: string;
-  settingsPassword?: string;
-}
+export type TabType = 'dashboard' | 'devices' | 'users' | 'setup' | 'settings';
