@@ -15,6 +15,7 @@ import SetupModal from './components/SetupModal';
 import EditAssignmentModal from './components/EditAssignmentModal';
 import IdentificationView from './components/IdentificationView';
 import ConfirmModal from './components/ConfirmModal';
+import ExportModal from './components/ExportModal';
 
 const GOOGLE_SCRIPT_APP_URL = 'https://script.google.com/macros/s/AKfycbywRpgG-YElFth55EkcjLYQgH4bepTf_yMYsVI9X2ktgf9hABt6sxxa-D7Tj2ySf7Q1/exec'.trim();
 
@@ -35,6 +36,8 @@ const App: React.FC = () => {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [settingUpDevice, setSettingUpDevice] = useState<Device | null>(null);
   const [editingAssignment, setEditingAssignment] = useState<AssignmentRecord | null>(null);
+  const [isExportOpen, setIsExportOpen] = useState(false);
+  const [exportFilteredDevices, setExportFilteredDevices] = useState<Device[] | undefined>(undefined);
   
   // Custom Confirm Dialog State
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -380,9 +383,30 @@ const App: React.FC = () => {
             isManagement={isManagement} 
             setupTagIds={setupTagIds} 
             onSearch={(v) => { setSearchTerm(v); setActiveTab('devices'); }} 
+            onOpenExport={() => {
+              setExportFilteredDevices(undefined);
+              setIsExportOpen(true);
+            }}
           />
         )}
-        {activeTab === 'devices' && <DevicesView devices={visibleDevices} onAction={handleAction} onEdit={setEditingDevice} onDelete={handleDeleteDevice} onSetup={setSettingUpDevice} isAdmin={isAdmin} isManagement={isManagement} setupTagIds={setupTagIds} searchTerm={searchTerm} setSearchTerm={setSearchTerm} />}
+        {activeTab === 'devices' && (
+          <DevicesView 
+            devices={visibleDevices} 
+            onAction={handleAction} 
+            onEdit={setEditingDevice} 
+            onDelete={handleDeleteDevice} 
+            onSetup={setSettingUpDevice} 
+            isAdmin={isAdmin} 
+            isManagement={isManagement} 
+            setupTagIds={setupTagIds} 
+            searchTerm={searchTerm} 
+            setSearchTerm={setSearchTerm}
+            onOpenExport={(filtered) => {
+              setExportFilteredDevices(filtered);
+              setIsExportOpen(true);
+            }}
+          />
+        )}
         {activeTab === 'users' && <UsersView users={users} isAdmin={isAdmin} isManagement={isManagement} onDelete={handleDeleteUser} onEditUser={setEditingUser} />}
         {activeTab === 'setup' && isAdmin && <SetupView setups={setups} onEdit={(tagId) => {
           const device = devices.find(d => d.tagId === tagId);
@@ -453,6 +477,20 @@ const App: React.FC = () => {
         confirmLabel={confirmDialog.confirmLabel}
         isSaving={isSaving}
       />
+
+      {/* Export Devices Modal */}
+      {isExportOpen && isManagement && (
+        <ExportModal 
+          devices={devices}
+          filteredDevices={exportFilteredDevices}
+          assignments={assignments}
+          users={users}
+          onClose={() => {
+            setIsExportOpen(false);
+            setExportFilteredDevices(undefined);
+          }}
+        />
+      )}
     </div>
   );
 };
