@@ -14,9 +14,10 @@ interface DevicesViewProps {
   setupTagIds: Set<string>;
   searchTerm: string;
   setSearchTerm: (val: string) => void;
+  onOpenExport?: (filteredList: Device[]) => void;
 }
 
-const DevicesView: React.FC<DevicesViewProps> = ({ devices, onAction, onEdit, onDelete, onSetup, isAdmin, isManagement, setupTagIds, searchTerm, setSearchTerm }) => {
+const DevicesView: React.FC<DevicesViewProps> = ({ devices, onAction, onEdit, onDelete, onSetup, isAdmin, isManagement, setupTagIds, searchTerm, setSearchTerm, onOpenExport }) => {
   const [categoryFilter, setCategoryFilter] = useState<string>('All');
   const [statusFilter, setStatusFilter] = useState<string>('All');
 
@@ -59,9 +60,21 @@ const DevicesView: React.FC<DevicesViewProps> = ({ devices, onAction, onEdit, on
 
   return (
     <div className="space-y-6 animate-fadeIn">
-      <div>
-        <h2 className="text-2xl font-bold text-slate-800 mb-1">Danh mục thiết bị</h2>
-        <p className="text-sm text-slate-500">{isManagement ? 'Quản lý toàn bộ tài sản hệ thống.' : 'Xem các tài sản được cấp phát cho bạn.'}</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-800 mb-1">Danh mục thiết bị</h2>
+          <p className="text-sm text-slate-500">{isManagement ? 'Quản lý toàn bộ tài sản hệ thống.' : 'Xem các tài sản được cấp phát cho bạn.'}</p>
+        </div>
+        {isManagement && onOpenExport && (
+          <button
+            type="button"
+            onClick={() => onOpenExport(filteredDevices)}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white font-bold text-xs rounded-xl shadow-md shadow-emerald-600/20 transition-all self-start sm:self-auto cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-[18px]">file_download</span>
+            <span>Xuất dữ liệu</span>
+          </button>
+        )}
       </div>
 
       <div className="space-y-4">
