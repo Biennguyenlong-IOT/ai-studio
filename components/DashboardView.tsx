@@ -18,9 +18,10 @@ interface DashboardViewProps {
   isManagement: boolean;
   setupTagIds: Set<string>;
   onSearch: (val: string) => void;
+  onOpenExport?: () => void;
 }
 
-const DashboardView: React.FC<DashboardViewProps> = ({ devices, history, assignments, onViewAll, onAction, onEdit, onDelete, onSetup, onEditAssignment, isAdmin, isManagement, setupTagIds, onSearch }) => {
+const DashboardView: React.FC<DashboardViewProps> = ({ devices, history, assignments, onViewAll, onAction, onEdit, onDelete, onSetup, onEditAssignment, isAdmin, isManagement, setupTagIds, onSearch, onOpenExport }) => {
   const [localSearch, setLocalSearch] = useState('');
   const [greeting, setGreeting] = useState('');
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -105,7 +106,19 @@ const DashboardView: React.FC<DashboardViewProps> = ({ devices, history, assignm
       </section>
 
       <section>
-        <h2 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-4 px-1">{isManagement ? 'Chỉ số hệ thống' : 'Tài sản cá nhân'}</h2>
+        <div className="flex items-center justify-between mb-4 px-1">
+          <h2 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">{isManagement ? 'Chỉ số hệ thống' : 'Tài sản cá nhân'}</h2>
+          {isManagement && onOpenExport && (
+            <button 
+              type="button"
+              onClick={onOpenExport}
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-xl transition-all active:scale-95 cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-[16px]">file_download</span>
+              <span>Xuất dữ liệu</span>
+            </button>
+          )}
+        </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard icon="inventory_2" label="Tổng tài sản" value={stats.total} color="bg-blue-50 text-blue-600" />
           <StatCard icon="verified" label="Sẵn sàng" value={stats.available} color="bg-green-50 text-green-600" onClick={() => onSearch('Sẵn sàng')} />
